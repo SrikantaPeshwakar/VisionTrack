@@ -28,6 +28,7 @@ import os
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pytest
 
@@ -35,21 +36,25 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from src.data_models import (
-    BoundingBox, FrameResult, PipelineSummary, Track, TrackSummary,
-)
+from exceptions import ExportError
 from src.constants import (
     DEFAULT_CSV_FILENAME,
     DEFAULT_JSON_FILENAME,
     DEFAULT_VIDEO_FILENAME,
     PERSON_CLASS_ID,
 )
-from exceptions import ExportError
-
+from src.data_models import (
+    BoundingBox,
+    FrameResult,
+    PipelineSummary,
+    Track,
+    TrackSummary,
+)
 
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def _make_config(
     save_video: bool = True,
@@ -59,14 +64,15 @@ def _make_config(
 ) -> MagicMock:
     cfg = MagicMock()
     cfg.export.save_video = save_video
-    cfg.export.save_json  = save_json
-    cfg.export.save_csv   = save_csv
+    cfg.export.save_json = save_json
+    cfg.export.save_csv = save_csv
     cfg.video.output_codec = codec
     return cfg
 
 
 def _make_exporter(**kwargs):
     from src.exporter import Exporter
+
     return Exporter(_make_config(**kwargs))
 
 
@@ -128,6 +134,7 @@ def _blank_frame(h: int = 480, w: int = 640) -> np.ndarray:
 # Construction & __repr__
 # ===========================================================================
 
+
 class TestExporterConstruction:
     def test_attributes_from_config(self):
         e = _make_exporter(save_video=True, save_json=False, save_csv=True, codec="XVID")
@@ -157,6 +164,7 @@ class TestExporterConstruction:
 # ===========================================================================
 # prepare()
 # ===========================================================================
+
 
 class TestPrepare:
     def test_creates_output_directory(self, tmp_path):
@@ -212,6 +220,7 @@ class TestPrepare:
 # write_frame()
 # ===========================================================================
 
+
 class TestWriteFrame:
     def _prepared_exporter(self, tmp_path):
         e = _make_exporter(save_video=True)
@@ -261,6 +270,7 @@ class TestWriteFrame:
 # finalise()
 # ===========================================================================
 
+
 class TestFinalise:
     def _run_finalise(self, tmp_path, **exporter_kwargs):
         e = _make_exporter(**exporter_kwargs)
@@ -280,10 +290,13 @@ class TestFinalise:
         analytics_summary = {"total_frames": 2, "unique_visitors": 2, "frames": []}
         config_dict = {"model": {"type": "yolov8n"}}
 
-        return e.finalise(
-            summary, frame_results, track_summaries,
-            analytics_summary, config_dict, "metro.mp4"
-        ), e, out_dir
+        return (
+            e.finalise(
+                summary, frame_results, track_summaries, analytics_summary, config_dict, "metro.mp4"
+            ),
+            e,
+            out_dir,
+        )
 
     def test_returns_pipeline_summary(self, tmp_path):
         summary, _, _ = self._run_finalise(tmp_path)
@@ -314,15 +327,11 @@ class TestFinalise:
         assert summary.output_video_path is None
 
     def test_save_json_false_no_json_path(self, tmp_path):
-        summary, _, _ = self._run_finalise(
-            tmp_path, save_video=False, save_json=False
-        )
+        summary, _, _ = self._run_finalise(tmp_path, save_video=False, save_json=False)
         assert summary.output_json_path is None
 
     def test_save_csv_false_no_csv_path(self, tmp_path):
-        summary, _, _ = self._run_finalise(
-            tmp_path, save_video=False, save_csv=False
-        )
+        summary, _, _ = self._run_finalise(tmp_path, save_video=False, save_csv=False)
         assert summary.output_csv_path is None
 
 
@@ -330,10 +339,12 @@ class TestFinalise:
 # _save_json()
 # ===========================================================================
 
+
 class TestSaveJson:
     @pytest.fixture
     def json_data(self, tmp_path):
         from src.exporter import Exporter
+
         e = Exporter(_make_config(save_json=True, save_video=False, save_csv=False))
         path = str(tmp_path / DEFAULT_JSON_FILENAME)
         frame_results = [
@@ -342,9 +353,13 @@ class TestSaveJson:
         ]
         track_summaries = [_make_track_summary(1), _make_track_summary(2)]
         analytics_summary = {
-            "total_frames": 2, "unique_visitors": 2, "frames": [],
-            "peak_concurrent_tracks": 1, "total_detections": 2,
-            "avg_fps": 28.0, "avg_inference_ms": 35.0,
+            "total_frames": 2,
+            "unique_visitors": 2,
+            "frames": [],
+            "peak_concurrent_tracks": 1,
+            "total_detections": 2,
+            "avg_fps": 28.0,
+            "avg_inference_ms": 35.0,
         }
         e._save_json(
             path,
@@ -395,9 +410,16 @@ class TestSaveJson:
     def test_track_entry_fields(self, json_data):
         data, _ = json_data
         t = data["tracks"][0]
-        for key in ["track_id", "first_seen_frame", "last_seen_frame",
-                    "first_seen_time", "last_seen_time", "dwell_time",
-                    "total_appearances", "trajectory"]:
+        for key in [
+            "track_id",
+            "first_seen_frame",
+            "last_seen_frame",
+            "first_seen_time",
+            "last_seen_time",
+            "dwell_time",
+            "total_appearances",
+            "trajectory",
+        ]:
             assert key in t, f"Missing track key: {key}"
 
     def test_trajectory_bbox_fields(self, json_data):
@@ -417,10 +439,12 @@ class TestSaveJson:
 # _save_csv()
 # ===========================================================================
 
+
 class TestSaveCsv:
     @pytest.fixture
     def csv_path(self, tmp_path):
         from src.exporter import Exporter
+
         e = Exporter(_make_config(save_csv=True, save_video=False, save_json=False))
         path = str(tmp_path / DEFAULT_CSV_FILENAME)
         frame_results = [
@@ -438,8 +462,15 @@ class TestSaveCsv:
         with open(csv_path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             assert set(reader.fieldnames) == {
-                "frame_id", "timestamp", "track_id",
-                "x1", "y1", "x2", "y2", "confidence", "fps",
+                "frame_id",
+                "timestamp",
+                "track_id",
+                "x1",
+                "y1",
+                "x2",
+                "y2",
+                "confidence",
+                "fps",
             }
 
     def test_row_count_matches_total_tracks_across_frames(self, csv_path):
@@ -475,6 +506,7 @@ class TestSaveCsv:
 
     def test_empty_frame_results_produces_header_only(self, tmp_path):
         from src.exporter import Exporter
+
         e = Exporter(_make_config())
         path = str(tmp_path / "empty.csv")
         e._save_csv(path, [])
@@ -484,6 +516,7 @@ class TestSaveCsv:
 
     def test_frames_with_no_tracks_produce_no_rows(self, tmp_path):
         from src.exporter import Exporter
+
         e = Exporter(_make_config())
         path = str(tmp_path / "notrack.csv")
         e._save_csv(path, [_make_frame_result(0, []), _make_frame_result(1, [])])

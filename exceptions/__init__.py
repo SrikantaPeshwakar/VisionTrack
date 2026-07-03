@@ -19,8 +19,7 @@ Usage:
     )
 """
 
-import sys
-from typing import Optional, Dict, Any
+from typing import Any
 
 __all__ = [
     "error_message_detail",
@@ -40,7 +39,8 @@ __all__ = [
 # Utility
 # ------------------------------------------------------------------------------
 
-def error_message_detail(error: Exception, error_detail: Optional[Any] = None) -> str:
+
+def error_message_detail(error: Exception, error_detail: Any | None = None) -> str:
     """Build a detailed error message with filename, line number, and description.
 
     Args:
@@ -56,9 +56,7 @@ def error_message_detail(error: Exception, error_detail: Optional[Any] = None) -
         _, _, exc_tb = error_detail.exc_info()
         file_name = exc_tb.tb_frame.f_code.co_filename if exc_tb else "Unknown file"
         line_number = exc_tb.tb_lineno if exc_tb else "Unknown line"
-        return (
-            f"Error in [{file_name}] at line [{line_number}] — {str(error)}"
-        )
+        return f"Error in [{file_name}] at line [{line_number}] — {str(error)}"
     return f"Error occurred — {str(error)}"
 
 
@@ -66,7 +64,8 @@ def error_message_detail(error: Exception, error_detail: Optional[Any] = None) -
 # Base Exception
 # ------------------------------------------------------------------------------
 
-class VisionTrackException(Exception):
+
+class VisionTrackException(Exception):  # noqa: N818
     """Base exception for all VisionTrack errors.
 
     Carries both a detailed internal message (safe for logs) and a concise
@@ -82,7 +81,7 @@ class VisionTrackException(Exception):
         self,
         message: str,
         user_message: str = "An unexpected error occurred in VisionTrack.",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.message = message
@@ -97,6 +96,7 @@ class VisionTrackException(Exception):
 # Specific Exceptions
 # ------------------------------------------------------------------------------
 
+
 class ConfigurationError(VisionTrackException):
     """Raised when config.yaml is missing, malformed, or contains invalid values.
 
@@ -104,11 +104,9 @@ class ConfigurationError(VisionTrackException):
         raise ConfigurationError("confidence_threshold must be in [0, 1]")
     """
 
-    def __init__(self, reason: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, reason: str, details: dict[str, Any] | None = None) -> None:
         message = f"Configuration error: {reason}"
-        user_message = (
-            "Invalid configuration. Check config/config.yaml and try again."
-        )
+        user_message = "Invalid configuration. Check config/config.yaml and try again."
         super().__init__(message, user_message=user_message, details=details)
 
 
@@ -123,7 +121,7 @@ class ModelLoadError(VisionTrackException):
         self,
         model_name: str,
         reason: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         message = f"Failed to load model '{model_name}': {reason}"
         user_message = (
@@ -145,7 +143,7 @@ class VideoIOError(VisionTrackException):
         self,
         video_path: str,
         reason: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         message = f"Video I/O error for '{video_path}': {reason}"
         user_message = (
@@ -166,7 +164,7 @@ class DetectionError(VisionTrackException):
         self,
         frame_id: int,
         reason: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         message = f"Detection failed at frame {frame_id}: {reason}"
         user_message = (
@@ -183,7 +181,7 @@ class TrackingError(VisionTrackException):
         raise TrackingError("botsort.yaml not found")
     """
 
-    def __init__(self, reason: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, reason: str, details: dict[str, Any] | None = None) -> None:
         message = f"Tracking error: {reason}"
         user_message = (
             "Tracker encountered an error. "
@@ -203,7 +201,7 @@ class DeviceError(VisionTrackException):
         self,
         requested_device: str,
         reason: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         message = f"Device error for '{requested_device}': {reason}"
         user_message = (
@@ -225,7 +223,7 @@ class ExportError(VisionTrackException):
         self,
         output_path: str,
         reason: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         message = f"Export failed for '{output_path}': {reason}"
         user_message = (
@@ -242,7 +240,7 @@ class AnalyticsError(VisionTrackException):
         raise AnalyticsError("track history is empty")
     """
 
-    def __init__(self, reason: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, reason: str, details: dict[str, Any] | None = None) -> None:
         message = f"Analytics error: {reason}"
         user_message = "Analytics computation failed. Check pipeline output for details."
         super().__init__(message, user_message=user_message, details=details)

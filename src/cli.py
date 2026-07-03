@@ -18,9 +18,9 @@ import argparse
 import sys
 import traceback
 
+from loggers import get_logger
 from src import __version__
 from src.constants import DEFAULT_MODEL, SUPPORTED_DEVICES, SUPPORTED_MODELS
-from loggers import get_logger
 
 log = get_logger(__name__)
 
@@ -28,6 +28,7 @@ log = get_logger(__name__)
 # ==============================================================================
 # Argument parser
 # ==============================================================================
+
 
 def build_parser() -> argparse.ArgumentParser:
     """Build and return the fully configured argument parser."""
@@ -49,7 +50,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- Required ---
     parser.add_argument(
-        "--input", "-i",
+        "--input",
+        "-i",
         metavar="VIDEO",
         required=True,
         help="Path to the input video file (e.g. metro.mp4).",
@@ -57,7 +59,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- Output & config ---
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         metavar="DIR",
         default="outputs",
         help=(
@@ -66,7 +69,8 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--config", "-c",
+        "--config",
+        "-c",
         metavar="YAML",
         default="config/config.yaml",
         help="Path to the configuration YAML file. Default: config/config.yaml",
@@ -120,7 +124,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- Flags ---
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Enable DEBUG-level logging for detailed pipeline output.",
     )
@@ -136,6 +141,7 @@ def build_parser() -> argparse.ArgumentParser:
 # ==============================================================================
 # Argument validation
 # ==============================================================================
+
 
 def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     """Validate parsed arguments before touching the pipeline.
@@ -159,20 +165,17 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
 
     # Confidence must be in [0, 1]
     if args.confidence is not None and not (0.0 <= args.confidence <= 1.0):
-        parser.error(
-            f"--confidence must be in [0.0, 1.0], got {args.confidence}"
-        )
+        parser.error(f"--confidence must be in [0.0, 1.0], got {args.confidence}")
 
     # skip_frames must be non-negative
     if args.skip_frames is not None and args.skip_frames < 0:
-        parser.error(
-            f"--skip-frames must be >= 0, got {args.skip_frames}"
-        )
+        parser.error(f"--skip-frames must be >= 0, got {args.skip_frames}")
 
 
 # ==============================================================================
 # Pipeline assembly
 # ==============================================================================
+
 
 def build_pipeline(args: argparse.Namespace):
     """Construct and return a fully wired VideoPipeline.
@@ -195,8 +198,8 @@ def build_pipeline(args: argparse.Namespace):
     """
     from src.analytics import Analytics
     from src.config_manager import ConfigManager
-    from src.device_manager import DeviceManager
     from src.detector import Detector
+    from src.device_manager import DeviceManager
     from src.exporter import Exporter
     from src.pipeline import VideoPipeline
     from src.tracker import Tracker
@@ -258,6 +261,7 @@ def build_pipeline(args: argparse.Namespace):
 # Summary display
 # ==============================================================================
 
+
 def print_summary(summary, verbose: bool = False) -> None:
     """Print the pipeline run summary to stdout.
 
@@ -283,6 +287,7 @@ def print_summary(summary, verbose: bool = False) -> None:
 # Main entry point
 # ==============================================================================
 
+
 def main() -> None:
     """Main CLI entry point registered in pyproject.toml scripts.
 
@@ -292,7 +297,7 @@ def main() -> None:
         2 — argument / configuration error (argparse convention)
     """
     parser = build_parser()
-    args   = parser.parse_args()
+    args = parser.parse_args()
 
     # ── Validate arguments ───────────────────────────────────────────────
     validate_args(args, parser)
@@ -330,8 +335,7 @@ def main() -> None:
             traceback.print_exc()
         print(f"\nError: {exc}", file=sys.stderr)
         print(
-            "Tip: ensure the input video is a valid file and the output "
-            "directory is writable.",
+            "Tip: ensure the input video is a valid file and the output " "directory is writable.",
             file=sys.stderr,
         )
         sys.exit(1)

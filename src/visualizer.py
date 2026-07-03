@@ -37,7 +37,6 @@ import numpy as np
 
 from loggers import get_logger
 from src.constants import (
-    BBOX_THICKNESS,
     COLOR_PALETTE,
     DEFAULT_TRACK_COLOR,
     FONT,
@@ -45,7 +44,6 @@ from src.constants import (
     FONT_SCALE_LABEL,
     FONT_THICKNESS_HUD,
     FONT_THICKNESS_LABEL,
-    HUD_ALPHA,
     HUD_BG_COLOR,
     HUD_TEXT_COLOR,
     LABEL_PADDING,
@@ -77,15 +75,15 @@ class Visualizer:
         config: Loaded ConfigManager instance.
     """
 
-    def __init__(self, config: "ConfigManager") -> None:
+    def __init__(self, config: ConfigManager) -> None:
         v = config.visualization
-        self.show_boxes:        bool  = v.show_boxes
-        self.show_ids:          bool  = v.show_ids
-        self.show_unique_count: bool  = v.show_unique_count
-        self.show_fps:          bool  = v.show_fps
-        self.trail_length:      int   = v.trail_length
-        self.bbox_thickness:    int   = v.bbox_thickness
-        self.hud_alpha:         float = v.hud_alpha
+        self.show_boxes: bool = v.show_boxes
+        self.show_ids: bool = v.show_ids
+        self.show_unique_count: bool = v.show_unique_count
+        self.show_fps: bool = v.show_fps
+        self.trail_length: int = v.trail_length
+        self.bbox_thickness: int = v.bbox_thickness
+        self.hud_alpha: float = v.hud_alpha
 
         # Trail history: track_id → deque of (cx, cy) centre points
         self._trails: dict[int, deque[tuple[int, int]]] = defaultdict(
@@ -232,12 +230,12 @@ class Visualizer:
         # Position the label above the box; fall back to below if clipped
         label_y1 = y - text_h - 2 * pad
         label_y2 = y
-        text_y   = y - pad
+        text_y = y - pad
 
         if label_y1 < 0:
             label_y1 = y
             label_y2 = y + text_h + 2 * pad
-            text_y   = y + text_h + pad
+            text_y = y + text_h + pad
 
         label_x2 = x + text_w + 2 * pad
 
@@ -280,12 +278,12 @@ class Visualizer:
                 continue
 
             color = self.get_track_color(track.track_id)
-            n     = len(pts)
+            n = len(pts)
 
             for i in range(1, n):
                 # Fade older segments: opacity proportional to position in trail
-                alpha  = i / n
-                faded  = tuple(int(c * alpha) for c in color)
+                alpha = i / n
+                faded = tuple(int(c * alpha) for c in color)
                 thickness = max(1, int(self.bbox_thickness * alpha))
                 cv2.line(frame, pts[i - 1], pts[i], faded, thickness)
 
@@ -295,9 +293,7 @@ class Visualizer:
     # Internal: HUD overlays
     # ------------------------------------------------------------------
 
-    def _draw_unique_count_hud(
-        self, frame: np.ndarray, unique_count: int
-    ) -> np.ndarray:
+    def _draw_unique_count_hud(self, frame: np.ndarray, unique_count: int) -> np.ndarray:
         """Render the unique visitor counter in the top-left corner.
 
         Uses a semi-transparent dark background panel for legibility on
@@ -313,9 +309,7 @@ class Visualizer:
         text = f"Unique Visitors: {unique_count}"
         return self._draw_hud_panel(frame, text, position="top-left")
 
-    def _draw_fps_hud(
-        self, frame: np.ndarray, fps: float, inference_ms: float
-    ) -> np.ndarray:
+    def _draw_fps_hud(self, frame: np.ndarray, fps: float, inference_ms: float) -> np.ndarray:
         """Render FPS and inference time in the top-right corner.
 
         Args:
@@ -351,9 +345,7 @@ class Visualizer:
         h, w = frame.shape[:2]
         margin = 10
 
-        (text_w, text_h), _ = cv2.getTextSize(
-            text, FONT, FONT_SCALE_HUD, FONT_THICKNESS_HUD
-        )
+        (text_w, text_h), _ = cv2.getTextSize(text, FONT, FONT_SCALE_HUD, FONT_THICKNESS_HUD)
         pad = LABEL_PADDING * 2
 
         panel_w = text_w + pad * 2

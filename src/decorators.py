@@ -18,7 +18,8 @@ they appear in the standard log file without extra setup.
 
 import functools
 import time
-from typing import Any, Callable, Optional, TypeVar, overload
+from collections.abc import Callable
+from typing import Any, TypeVar, overload
 
 from loggers import get_logger
 
@@ -32,17 +33,19 @@ F = TypeVar("F", bound=Callable[..., Any])
 # @measure_time
 # ==============================================================================
 
+
 @overload
 def measure_time(func: F) -> F: ...
 
+
 @overload
-def measure_time(*, name: Optional[str] = None, log_level: str = "DEBUG") -> Callable[[F], F]: ...
+def measure_time(*, name: str | None = None, log_level: str = "DEBUG") -> Callable[[F], F]: ...
 
 
 def measure_time(
-    func: Optional[F] = None,
+    func: F | None = None,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     log_level: str = "DEBUG",
 ) -> Any:
     """Decorator that measures and logs a function's wall-clock execution time.
@@ -71,6 +74,7 @@ def measure_time(
     Returns:
         Decorated function with identical signature.
     """
+
     def decorator(fn: F) -> F:
         _label = name or fn.__qualname__
         _level = getattr(log, log_level.lower(), log.debug)
@@ -98,6 +102,7 @@ def measure_time(
 # ==============================================================================
 # @retry
 # ==============================================================================
+
 
 def retry(
     max_attempts: int = 3,
@@ -140,7 +145,7 @@ def retry(
         @functools.wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             current_delay = delay
-            last_exc: Optional[Exception] = None
+            last_exc: Exception | None = None
 
             for attempt in range(1, max_attempts + 1):
                 try:

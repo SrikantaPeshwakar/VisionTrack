@@ -20,7 +20,6 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 __all__ = [
     "get_logger",
@@ -32,20 +31,20 @@ __all__ = [
 # ANSI colour codes for console output
 # ==============================================================================
 
-_RESET  = "\033[0m"
-_BOLD   = "\033[1m"
-_GREY   = "\033[90m"
-_CYAN   = "\033[96m"
-_GREEN  = "\033[92m"
+_RESET = "\033[0m"
+_BOLD = "\033[1m"
+_GREY = "\033[90m"
+_CYAN = "\033[96m"
+_GREEN = "\033[92m"
 _YELLOW = "\033[93m"
-_RED    = "\033[91m"
-_BRED   = "\033[1;91m"   # bold red — ERROR / CRITICAL
+_RED = "\033[91m"
+_BRED = "\033[1;91m"  # bold red — ERROR / CRITICAL
 
 _LEVEL_COLORS: dict[int, str] = {
-    logging.DEBUG:    _GREY,
-    logging.INFO:     _GREEN,
-    logging.WARNING:  _YELLOW,
-    logging.ERROR:    _RED,
+    logging.DEBUG: _GREY,
+    logging.INFO: _GREEN,
+    logging.WARNING: _YELLOW,
+    logging.ERROR: _RED,
     logging.CRITICAL: _BRED,
 }
 
@@ -86,13 +85,9 @@ _LOG_LEVEL_NAME: str = (os.getenv("VISIONTRACK_LOG_LEVEL") or "INFO").upper()
 _LOG_LEVEL: int = getattr(logging, _LOG_LEVEL_NAME, logging.INFO)
 
 # Plain format for file handler (no ANSI codes)
-_FILE_FORMAT = (
-    "[%(asctime)s] %(levelname)-8s | %(name)s | %(filename)s:%(lineno)d | %(message)s"
-)
+_FILE_FORMAT = "[%(asctime)s] %(levelname)-8s | %(name)s | %(filename)s:%(lineno)d | %(message)s"
 # Slightly shorter format for console (colour formatter wraps levelname)
-_CONSOLE_FORMAT = (
-    "[%(asctime)s] %(levelname)s | %(name)s | %(message)s"
-)
+_CONSOLE_FORMAT = "[%(asctime)s] %(levelname)s | %(name)s | %(message)s"
 _DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # Apply root config once at module import
@@ -120,6 +115,7 @@ logging.basicConfig(level=_LOG_LEVEL, handlers=_handlers)
 # ==============================================================================
 # Third-party library verbosity control
 # ==============================================================================
+
 
 def configure_logging() -> None:
     """Suppress noisy third-party loggers and apply VisionTrack log level.
@@ -161,7 +157,8 @@ configure_logging()
 # Application logger factory
 # ==============================================================================
 
-def get_logger(name: str, level: Optional[int] = None) -> logging.Logger:
+
+def get_logger(name: str, level: int | None = None) -> logging.Logger:
     """Return a named logger under the 'visiontrack' namespace.
 
     All pipeline modules should obtain their logger via this function so that:
@@ -173,7 +170,7 @@ def get_logger(name: str, level: Optional[int] = None) -> logging.Logger:
         name: Typically ``__name__`` of the calling module.
               The prefix 'visiontrack.' is prepended automatically if the
               name doesn't already start with it.
-        level: Optional override log level for this specific logger.
+        level: Override log level for this specific logger.
 
     Returns:
         A configured ``logging.Logger`` instance.

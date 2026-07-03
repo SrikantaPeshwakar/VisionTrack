@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -53,6 +53,7 @@ log = get_logger(__name__)
 # ==============================================================================
 # Namespace — turns a plain dict into attribute-accessible object
 # ==============================================================================
+
 
 class _Namespace:
     """Recursively converts a dictionary into dot-accessible attributes.
@@ -89,6 +90,7 @@ class _Namespace:
 # ==============================================================================
 # ConfigManager
 # ==============================================================================
+
 
 class ConfigManager:
     """Loads, validates and exposes the VisionTrack configuration.
@@ -150,11 +152,11 @@ class ConfigManager:
     def apply_overrides(
         self,
         *,
-        model: Optional[str] = None,
-        confidence: Optional[float] = None,
-        device: Optional[str] = None,
-        skip_frames: Optional[int] = None,
-        output_dir: Optional[str] = None,
+        model: str | None = None,
+        confidence: float | None = None,
+        device: str | None = None,
+        skip_frames: int | None = None,
+        output_dir: str | None = None,
         verbose: bool = False,
     ) -> None:
         """Merge CLI argument values into the loaded configuration.
@@ -175,8 +177,7 @@ class ConfigManager:
         if model is not None:
             if model not in SUPPORTED_MODELS:
                 raise ConfigurationError(
-                    f"--model '{model}' is not supported. "
-                    f"Choose from: {SUPPORTED_MODELS}",
+                    f"--model '{model}' is not supported. " f"Choose from: {SUPPORTED_MODELS}",
                     details={"provided": model, "supported": SUPPORTED_MODELS},
                 )
             self.model.type = model
@@ -194,8 +195,7 @@ class ConfigManager:
         if device is not None:
             if device not in SUPPORTED_DEVICES:
                 raise ConfigurationError(
-                    f"--device '{device}' is not supported. "
-                    f"Choose from: {SUPPORTED_DEVICES}",
+                    f"--device '{device}' is not supported. " f"Choose from: {SUPPORTED_DEVICES}",
                     details={"provided": device, "supported": SUPPORTED_DEVICES},
                 )
             self.device.preferred = device
@@ -282,8 +282,16 @@ class ConfigManager:
         log.debug("Configuration validation passed.")
 
     def _check_required_sections(self, cfg: dict[str, Any]) -> None:
-        required = ["model", "device", "tracker", "video", "visualization",
-                    "export", "analytics", "logging"]
+        required = [
+            "model",
+            "device",
+            "tracker",
+            "video",
+            "visualization",
+            "export",
+            "analytics",
+            "logging",
+        ]
         missing = [s for s in required if s not in cfg]
         if missing:
             raise ConfigurationError(
@@ -295,8 +303,7 @@ class ConfigManager:
         model_type = m.get("type", DEFAULT_MODEL)
         if model_type not in SUPPORTED_MODELS:
             raise ConfigurationError(
-                f"model.type '{model_type}' is not supported. "
-                f"Supported: {SUPPORTED_MODELS}",
+                f"model.type '{model_type}' is not supported. " f"Supported: {SUPPORTED_MODELS}",
                 details={"provided": model_type},
             )
 
@@ -425,8 +432,7 @@ class ConfigManager:
         level = lg.get("level", "INFO")
         if level not in valid_levels:
             raise ConfigurationError(
-                f"logging.level '{level}' is not valid. "
-                f"Choose from: {sorted(valid_levels)}",
+                f"logging.level '{level}' is not valid. " f"Choose from: {sorted(valid_levels)}",
                 details={"provided": level},
             )
 
@@ -451,8 +457,7 @@ class ConfigManager:
                 log.debug("Env override: device.preferred='%s'.", env_device)
             else:
                 log.warning(
-                    "VISIONTRACK_DEVICE='%s' is not a supported device. "
-                    "Ignoring. Supported: %s",
+                    "VISIONTRACK_DEVICE='%s' is not a supported device. " "Ignoring. Supported: %s",
                     env_device,
                     SUPPORTED_DEVICES,
                 )
@@ -474,9 +479,7 @@ class ConfigManager:
                 conf_val = float(env_conf)
                 if 0.0 <= conf_val <= 1.0:
                     cfg["model"]["confidence_threshold"] = conf_val
-                    log.debug(
-                        "Env override: model.confidence_threshold=%.2f.", conf_val
-                    )
+                    log.debug("Env override: model.confidence_threshold=%.2f.", conf_val)
                 else:
                     log.warning(
                         "VISIONTRACK_CONFIDENCE='%s' is out of [0, 1]. Ignoring.",
@@ -497,8 +500,7 @@ class ConfigManager:
                 log.debug("Env override: logging.level='%s'.", env_log)
             else:
                 log.warning(
-                    "VISIONTRACK_LOG_LEVEL='%s' is not valid. Ignoring. "
-                    "Valid: %s",
+                    "VISIONTRACK_LOG_LEVEL='%s' is not valid. Ignoring. " "Valid: %s",
                     env_log,
                     sorted(valid),
                 )
@@ -509,14 +511,14 @@ class ConfigManager:
 
     def _populate(self, cfg: dict[str, Any]) -> None:
         """Convert raw dict sections into _Namespace attributes."""
-        self.model         = _Namespace(cfg["model"])
-        self.device        = _Namespace(cfg["device"])
-        self.tracker       = _Namespace(cfg["tracker"])
-        self.video         = _Namespace(cfg["video"])
+        self.model = _Namespace(cfg["model"])
+        self.device = _Namespace(cfg["device"])
+        self.tracker = _Namespace(cfg["tracker"])
+        self.video = _Namespace(cfg["video"])
         self.visualization = _Namespace(cfg["visualization"])
-        self.export        = _Namespace(cfg["export"])
-        self.analytics     = _Namespace(cfg["analytics"])
-        self.logging       = _Namespace(cfg["logging"])
+        self.export = _Namespace(cfg["export"])
+        self.analytics = _Namespace(cfg["analytics"])
+        self.logging = _Namespace(cfg["logging"])
 
     def __repr__(self) -> str:
         return (

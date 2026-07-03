@@ -21,8 +21,8 @@ from __future__ import annotations
 
 import os
 import sys
-from collections import deque
 from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 
@@ -30,17 +30,17 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from src.data_models import BoundingBox, Track
 from src.constants import (
     COLOR_PALETTE,
     DEFAULT_TRACK_COLOR,
     PERSON_CLASS_ID,
 )
-
+from src.data_models import BoundingBox, Track
 
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def _make_config(
     show_boxes: bool = True,
@@ -52,25 +52,28 @@ def _make_config(
     hud_alpha: float = 0.6,
 ) -> MagicMock:
     cfg = MagicMock()
-    cfg.visualization.show_boxes        = show_boxes
-    cfg.visualization.show_ids          = show_ids
+    cfg.visualization.show_boxes = show_boxes
+    cfg.visualization.show_ids = show_ids
     cfg.visualization.show_unique_count = show_unique_count
-    cfg.visualization.show_fps          = show_fps
-    cfg.visualization.trail_length      = trail_length
-    cfg.visualization.bbox_thickness    = bbox_thickness
-    cfg.visualization.hud_alpha         = hud_alpha
+    cfg.visualization.show_fps = show_fps
+    cfg.visualization.trail_length = trail_length
+    cfg.visualization.bbox_thickness = bbox_thickness
+    cfg.visualization.hud_alpha = hud_alpha
     return cfg
 
 
 def _make_visualizer(**kwargs):
     from src.visualizer import Visualizer
+
     return Visualizer(_make_config(**kwargs))
 
 
 def _make_track(
     track_id: int = 1,
-    x1: float = 50.0, y1: float = 50.0,
-    x2: float = 150.0, y2: float = 200.0,
+    x1: float = 50.0,
+    y1: float = 50.0,
+    x2: float = 150.0,
+    y2: float = 200.0,
     frame_id: int = 0,
     ts: float = 0.0,
 ) -> Track:
@@ -98,11 +101,10 @@ def _white_frame(h: int = 480, w: int = 640) -> np.ndarray:
 # Construction & __repr__
 # ===========================================================================
 
+
 class TestVisualizerConstruction:
     def test_attributes_from_config(self):
-        v = _make_visualizer(
-            show_boxes=True, show_ids=False, trail_length=10, hud_alpha=0.5
-        )
+        v = _make_visualizer(show_boxes=True, show_ids=False, trail_length=10, hud_alpha=0.5)
         assert v.show_boxes is True
         assert v.show_ids is False
         assert v.trail_length == 10
@@ -124,37 +126,44 @@ class TestVisualizerConstruction:
 # get_track_color
 # ===========================================================================
 
+
 class TestGetTrackColor:
     def test_returns_tuple_of_three(self):
         from src.visualizer import Visualizer
+
         color = Visualizer.get_track_color(0)
         assert isinstance(color, tuple)
         assert len(color) == 3
 
     def test_deterministic_same_id(self):
         from src.visualizer import Visualizer
+
         assert Visualizer.get_track_color(1) == Visualizer.get_track_color(1)
 
     def test_different_ids_may_differ(self):
         from src.visualizer import Visualizer
+
         # IDs 0 and 1 are different palette entries
         assert Visualizer.get_track_color(0) != Visualizer.get_track_color(1)
 
     def test_palette_cycling(self):
         from src.visualizer import Visualizer
+
         n = len(COLOR_PALETTE)
         assert Visualizer.get_track_color(0) == Visualizer.get_track_color(n)
         assert Visualizer.get_track_color(3) == Visualizer.get_track_color(n + 3)
 
     def test_values_in_bgr_range(self):
         from src.visualizer import Visualizer
+
         for tid in range(50):
             color = Visualizer.get_track_color(tid)
             assert all(0 <= c <= 255 for c in color), f"Color out of range: {color}"
 
     def test_empty_palette_returns_default(self, monkeypatch):
-        from src.visualizer import Visualizer
         import src.visualizer as vis_mod
+        from src.visualizer import Visualizer
+
         monkeypatch.setattr(vis_mod, "COLOR_PALETTE", [])
         assert Visualizer.get_track_color(5) == DEFAULT_TRACK_COLOR
 
@@ -162,6 +171,7 @@ class TestGetTrackColor:
 # ===========================================================================
 # annotate() — output properties
 # ===========================================================================
+
 
 class TestAnnotateOutput:
     def test_returns_ndarray(self):
@@ -205,52 +215,65 @@ class TestAnnotateOutput:
 # annotate() — overlay toggles
 # ===========================================================================
 
+
 class TestAnnotateOverlayToggles:
     def _pixels_changed(self, original: np.ndarray, annotated: np.ndarray) -> bool:
         return not np.array_equal(original, annotated)
 
     def test_show_boxes_true_changes_pixels(self):
-        v = _make_visualizer(show_boxes=True, show_ids=False,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            show_boxes=True, show_ids=False, show_unique_count=False, show_fps=False
+        )
         frame = _blank_frame()
         out = v.annotate(frame, [_make_track()], 0, 0.0, 0.0)
         assert self._pixels_changed(frame, out)
 
     def test_show_ids_true_changes_pixels(self):
-        v = _make_visualizer(show_boxes=False, show_ids=True,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            show_boxes=False, show_ids=True, show_unique_count=False, show_fps=False
+        )
         frame = _blank_frame()
         out = v.annotate(frame, [_make_track()], 0, 0.0, 0.0)
         assert self._pixels_changed(frame, out)
 
     def test_show_unique_count_true_changes_pixels(self):
-        v = _make_visualizer(show_boxes=False, show_ids=False,
-                              show_unique_count=True, show_fps=False)
+        v = _make_visualizer(
+            show_boxes=False, show_ids=False, show_unique_count=True, show_fps=False
+        )
         frame = _blank_frame()
         out = v.annotate(frame, [], 5, 0.0, 0.0)
         assert self._pixels_changed(frame, out)
 
     def test_show_fps_true_changes_pixels(self):
-        v = _make_visualizer(show_boxes=False, show_ids=False,
-                              show_unique_count=False, show_fps=True)
+        v = _make_visualizer(
+            show_boxes=False, show_ids=False, show_unique_count=False, show_fps=True
+        )
         frame = _blank_frame()
         out = v.annotate(frame, [], 0, 28.5, 35.0)
         assert self._pixels_changed(frame, out)
 
     def test_all_overlays_disabled_no_change_from_tracks(self):
         """With all overlays off and no trails, output == input copy."""
-        v = _make_visualizer(show_boxes=False, show_ids=False,
-                              show_unique_count=False, show_fps=False,
-                              trail_length=0)
+        v = _make_visualizer(
+            show_boxes=False,
+            show_ids=False,
+            show_unique_count=False,
+            show_fps=False,
+            trail_length=0,
+        )
         frame = _blank_frame()
         out = v.annotate(frame, [_make_track()], 0, 0.0, 0.0)
         np.testing.assert_array_equal(out, frame)
 
     def test_trails_enabled_changes_pixels_after_two_frames(self):
         """Trails need 2 frames before they draw line segments."""
-        v = _make_visualizer(show_boxes=False, show_ids=False,
-                              show_unique_count=False, show_fps=False,
-                              trail_length=10)
+        v = _make_visualizer(
+            show_boxes=False,
+            show_ids=False,
+            show_unique_count=False,
+            show_fps=False,
+            trail_length=10,
+        )
         frame = _blank_frame()
         track = _make_track(1, x1=50, y1=50, x2=150, y2=200)
         v.annotate(frame, [track], 0, 0.0, 0.0)  # frame 0 — no trail yet
@@ -264,11 +287,13 @@ class TestAnnotateOverlayToggles:
 # _draw_tracks
 # ===========================================================================
 
+
 class TestDrawTracks:
     def test_bbox_region_changes_on_black_frame(self):
         """On a black frame, drawing a coloured box changes pixels in bbox area."""
-        v = _make_visualizer(show_boxes=True, show_ids=False,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            show_boxes=True, show_ids=False, show_unique_count=False, show_fps=False
+        )
         frame = _blank_frame()
         track = _make_track(1, x1=100, y1=100, x2=200, y2=300)
         out = v._draw_tracks(frame.copy(), [track])
@@ -276,8 +301,9 @@ class TestDrawTracks:
         assert out[100, 100:200].max() > 0 or out[100:300, 100].max() > 0
 
     def test_multiple_tracks_all_drawn(self):
-        v = _make_visualizer(show_boxes=True, show_ids=False,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            show_boxes=True, show_ids=False, show_unique_count=False, show_fps=False
+        )
         frame = _blank_frame()
         tracks = [
             _make_track(1, x1=10, y1=10, x2=100, y2=100),
@@ -290,6 +316,7 @@ class TestDrawTracks:
 
     def test_different_track_ids_get_different_colors(self):
         from src.visualizer import Visualizer
+
         c1 = Visualizer.get_track_color(0)
         c2 = Visualizer.get_track_color(1)
         assert c1 != c2
@@ -299,28 +326,32 @@ class TestDrawTracks:
 # HUD panels
 # ===========================================================================
 
+
 class TestHudPanels:
     def test_unique_count_hud_changes_top_left(self):
-        v = _make_visualizer(show_boxes=False, show_ids=False,
-                              show_fps=False, show_unique_count=True)
+        v = _make_visualizer(
+            show_boxes=False, show_ids=False, show_fps=False, show_unique_count=True
+        )
         frame = _blank_frame()
         out = v.annotate(frame, [], 42, 0.0, 0.0)
         # Top-left region (first 80 rows, first 300 cols) should have changed
         assert out[:80, :300].max() > 0
 
     def test_fps_hud_changes_top_right(self):
-        v = _make_visualizer(show_boxes=False, show_ids=False,
-                              show_fps=True, show_unique_count=False)
+        v = _make_visualizer(
+            show_boxes=False, show_ids=False, show_fps=True, show_unique_count=False
+        )
         w = 640
         frame = _blank_frame(w=w)
         out = v.annotate(frame, [], 0, 28.5, 35.0)
         # Top-right region should have changed
-        assert out[:80, w // 2:].max() > 0
+        assert out[:80, w // 2 :].max() > 0
 
     def test_hud_alpha_zero_no_background_blend(self):
         """With alpha=0 the background ROI is untouched — only text is drawn."""
-        v = _make_visualizer(show_unique_count=True, show_fps=False,
-                              show_boxes=False, show_ids=False, hud_alpha=0.0)
+        v = _make_visualizer(
+            show_unique_count=True, show_fps=False, show_boxes=False, show_ids=False, hud_alpha=0.0
+        )
         frame = _blank_frame()
         out = v.annotate(frame, [], 5, 0.0, 0.0)
         # Some pixels will be non-zero (text), but fewer than with alpha=0.6
@@ -328,8 +359,9 @@ class TestHudPanels:
 
     def test_hud_alpha_one_full_background(self):
         """With alpha=1 the background panel is fully opaque."""
-        v = _make_visualizer(show_unique_count=True, show_fps=False,
-                              show_boxes=False, show_ids=False, hud_alpha=1.0)
+        v = _make_visualizer(
+            show_unique_count=True, show_fps=False, show_boxes=False, show_ids=False, hud_alpha=1.0
+        )
         frame = _blank_frame()
         out = v.annotate(frame, [], 5, 0.0, 0.0)
         # Top-left panel region should match HUD_BG_COLOR (30,30,30) roughly
@@ -337,23 +369,30 @@ class TestHudPanels:
         assert roi.mean() > 0  # not all black
 
     def test_top_left_and_top_right_huds_both_rendered(self):
-        v = _make_visualizer(show_unique_count=True, show_fps=True,
-                              show_boxes=False, show_ids=False)
+        v = _make_visualizer(
+            show_unique_count=True, show_fps=True, show_boxes=False, show_ids=False
+        )
         frame = _blank_frame()
         out = v.annotate(frame, [], 10, 30.0, 25.0)
         # Both corners should have non-zero pixels
-        assert out[:80, :300].max() > 0   # top-left
-        assert out[:80, 350:].max() > 0   # top-right
+        assert out[:80, :300].max() > 0  # top-left
+        assert out[:80, 350:].max() > 0  # top-right
 
 
 # ===========================================================================
 # Trail drawing
 # ===========================================================================
 
+
 class TestTrails:
     def test_trail_history_updated_per_track(self):
-        v = _make_visualizer(trail_length=5, show_boxes=False, show_ids=False,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            trail_length=5,
+            show_boxes=False,
+            show_ids=False,
+            show_unique_count=False,
+            show_fps=False,
+        )
         frame = _blank_frame()
         track = _make_track(1)
         v.annotate(frame, [track], 0, 0.0, 0.0)
@@ -361,37 +400,69 @@ class TestTrails:
         assert len(v._trails[1]) == 1
 
     def test_trail_grows_across_frames(self):
-        v = _make_visualizer(trail_length=5, show_boxes=False, show_ids=False,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            trail_length=5,
+            show_boxes=False,
+            show_ids=False,
+            show_unique_count=False,
+            show_fps=False,
+        )
         frame = _blank_frame()
         for i in range(4):
-            v.annotate(frame, [_make_track(1, x1=10+i, y1=10+i,
-                                            x2=110+i, y2=110+i)],
-                       0, 0.0, 0.0)
+            v.annotate(
+                frame, [_make_track(1, x1=10 + i, y1=10 + i, x2=110 + i, y2=110 + i)], 0, 0.0, 0.0
+            )
         assert len(v._trails[1]) == 4
 
     def test_trail_respects_maxlen(self):
         """Trail deque maxlen should cap at trail_length."""
-        v = _make_visualizer(trail_length=3, show_boxes=False, show_ids=False,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            trail_length=3,
+            show_boxes=False,
+            show_ids=False,
+            show_unique_count=False,
+            show_fps=False,
+        )
         frame = _blank_frame()
         for i in range(10):
-            v.annotate(frame, [_make_track(1, x1=float(i*10), y1=float(i*10),
-                                            x2=float(i*10+100), y2=float(i*10+100))],
-                       0, 0.0, 0.0)
+            v.annotate(
+                frame,
+                [
+                    _make_track(
+                        1,
+                        x1=float(i * 10),
+                        y1=float(i * 10),
+                        x2=float(i * 10 + 100),
+                        y2=float(i * 10 + 100),
+                    )
+                ],
+                0,
+                0.0,
+                0.0,
+            )
         assert len(v._trails[1]) <= 3
 
     def test_trail_length_zero_no_trails(self):
-        v = _make_visualizer(trail_length=0, show_boxes=False, show_ids=False,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            trail_length=0,
+            show_boxes=False,
+            show_ids=False,
+            show_unique_count=False,
+            show_fps=False,
+        )
         frame = _blank_frame()
         v.annotate(frame, [_make_track(1)], 0, 0.0, 0.0)
         # With trail_length=0 the trail branch is skipped
         assert len(v._trails) == 0
 
     def test_separate_trails_per_track_id(self):
-        v = _make_visualizer(trail_length=5, show_boxes=False, show_ids=False,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            trail_length=5,
+            show_boxes=False,
+            show_ids=False,
+            show_unique_count=False,
+            show_fps=False,
+        )
         frame = _blank_frame()
         v.annotate(frame, [_make_track(1), _make_track(2)], 0, 0.0, 0.0)
         assert 1 in v._trails
@@ -401,6 +472,7 @@ class TestTrails:
 # ===========================================================================
 # reset_trails
 # ===========================================================================
+
 
 class TestResetTrails:
     def test_reset_clears_trail_history(self):
@@ -412,8 +484,13 @@ class TestResetTrails:
         assert len(v._trails) == 0
 
     def test_trails_repopulate_after_reset(self):
-        v = _make_visualizer(trail_length=5, show_boxes=False, show_ids=False,
-                              show_unique_count=False, show_fps=False)
+        v = _make_visualizer(
+            trail_length=5,
+            show_boxes=False,
+            show_ids=False,
+            show_unique_count=False,
+            show_fps=False,
+        )
         frame = _blank_frame()
         v.annotate(frame, [_make_track(1)], 0, 0.0, 0.0)
         v.reset_trails()

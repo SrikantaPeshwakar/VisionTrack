@@ -35,7 +35,6 @@ import os
 import platform
 import sys
 import time
-import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -46,13 +45,13 @@ _REPO_ROOT = Path(__file__).resolve().parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from loggers import get_logger
 from src import __version__
 from src.constants import (
     DEFAULT_EVAL_REPORT_FILENAME,
     SUPPORTED_DEVICES,
     SUPPORTED_MODELS,
 )
-from loggers import get_logger
 
 log = get_logger(__name__)
 
@@ -60,6 +59,7 @@ log = get_logger(__name__)
 # ===========================================================================
 # Argument parser
 # ===========================================================================
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -78,7 +78,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--video", "-i",
+        "--video",
+        "-i",
         metavar="VIDEO",
         required=True,
         help="Path to the input video file.",
@@ -96,7 +97,8 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--config", "-c",
+        "--config",
+        "-c",
         metavar="YAML",
         default="config/config.yaml",
         help="Path to config.yaml. Default: config/config.yaml",
@@ -109,12 +111,12 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Compute device. Overrides config.yaml. Choices: {', '.join(SUPPORTED_DEVICES)}",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         metavar="DIR",
         default="outputs/eval",
         help=(
-            "Directory for evaluation outputs (annotated videos + report). "
-            "Default: outputs/eval"
+            "Directory for evaluation outputs (annotated videos + report). " "Default: outputs/eval"
         ),
     )
     parser.add_argument(
@@ -143,6 +145,7 @@ def build_parser() -> argparse.ArgumentParser:
 # Validation
 # ===========================================================================
 
+
 def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     if not os.path.isfile(args.video):
         parser.error(f"Video file not found: '{args.video}'")
@@ -163,6 +166,7 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
 # ===========================================================================
 # Single-model benchmark
 # ===========================================================================
+
 
 def _run_model(
     model_name: str,
@@ -191,24 +195,24 @@ def _run_model(
     """
     from src.analytics import Analytics
     from src.config_manager import ConfigManager
-    from src.device_manager import DeviceManager
     from src.detector import Detector
+    from src.device_manager import DeviceManager
     from src.exporter import Exporter
     from src.pipeline import VideoPipeline
     from src.tracker import Tracker
     from src.visualizer import Visualizer
 
     result: dict = {
-        "model":            model_name,
-        "status":           "error",
-        "error":            None,
-        "avg_fps":          0.0,
+        "model": model_name,
+        "status": "error",
+        "error": None,
+        "avg_fps": 0.0,
         "avg_inference_ms": 0.0,
-        "total_time":       0.0,
-        "unique_visitors":  0,
-        "peak_concurrent":  0,
-        "avg_dwell_time":   0.0,
-        "output_dir":       "",
+        "total_time": 0.0,
+        "unique_visitors": 0,
+        "peak_concurrent": 0,
+        "avg_dwell_time": 0.0,
+        "output_dir": "",
     }
 
     try:
@@ -223,8 +227,8 @@ def _run_model(
         )
         # Force export flags for eval context
         cfg.export.save_video = save_video
-        cfg.export.save_json  = True
-        cfg.export.save_csv   = False   # not needed for benchmarking
+        cfg.export.save_json = True
+        cfg.export.save_csv = False  # not needed for benchmarking
 
         # ── Device ──────────────────────────────────────────────────────
         device_mgr = DeviceManager(
@@ -233,11 +237,11 @@ def _run_model(
         )
 
         # ── Components ──────────────────────────────────────────────────
-        detector   = Detector(cfg, device=device_mgr.device)
-        tracker    = Tracker(cfg, model=detector._model)
-        analytics  = Analytics(cfg)
+        detector = Detector(cfg, device=device_mgr.device)
+        tracker = Tracker(cfg, model=detector._model)
+        analytics = Analytics(cfg)
         visualizer = Visualizer(cfg)
-        exporter   = Exporter(cfg)
+        exporter = Exporter(cfg)
 
         pipeline = VideoPipeline(
             config=cfg,
@@ -249,20 +253,22 @@ def _run_model(
         )
 
         # ── Run ─────────────────────────────────────────────────────────
-        t0      = time.perf_counter()
+        t0 = time.perf_counter()
         summary = pipeline.run(video_path)
         elapsed = time.perf_counter() - t0
 
-        result.update({
-            "status":           "ok",
-            "avg_fps":          round(summary.avg_fps, 2),
-            "avg_inference_ms": round(summary.avg_inference_time_ms, 2),
-            "total_time":       round(elapsed, 2),
-            "unique_visitors":  summary.unique_visitors,
-            "peak_concurrent":  summary.peak_concurrent_tracks,
-            "avg_dwell_time":   round(summary.avg_dwell_time, 2),
-            "output_dir":       summary.output_video_path or cfg.export.output_dir,
-        })
+        result.update(
+            {
+                "status": "ok",
+                "avg_fps": round(summary.avg_fps, 2),
+                "avg_inference_ms": round(summary.avg_inference_time_ms, 2),
+                "total_time": round(elapsed, 2),
+                "unique_visitors": summary.unique_visitors,
+                "peak_concurrent": summary.peak_concurrent_tracks,
+                "avg_dwell_time": round(summary.avg_dwell_time, 2),
+                "output_dir": summary.output_video_path or cfg.export.output_dir,
+            }
+        )
 
     except Exception as exc:
         result["error"] = str(exc)
@@ -275,22 +281,23 @@ def _run_model(
 # Display helpers
 # ===========================================================================
 
+
 def _print_table(results: list[dict]) -> None:
     """Print a formatted ASCII comparison table to stdout."""
     cols = [
-        ("Model",      "model",            12),
-        ("Avg FPS",    "avg_fps",           9),
-        ("Inf (ms)",   "avg_inference_ms",  10),
-        ("Time (s)",   "total_time",        9),
-        ("Unique",     "unique_visitors",   8),
-        ("Peak",       "peak_concurrent",   6),
-        ("Dwell (s)",  "avg_dwell_time",    10),
-        ("Status",     "status",            8),
+        ("Model", "model", 12),
+        ("Avg FPS", "avg_fps", 9),
+        ("Inf (ms)", "avg_inference_ms", 10),
+        ("Time (s)", "total_time", 9),
+        ("Unique", "unique_visitors", 8),
+        ("Peak", "peak_concurrent", 6),
+        ("Dwell (s)", "avg_dwell_time", 10),
+        ("Status", "status", 8),
     ]
 
     # Header
-    sep  = "+" + "+".join("-" * (w + 2) for _, _, w in cols) + "+"
-    hdr  = "|" + "|".join(f" {label:<{w}} " for label, _, w in cols) + "|"
+    sep = "+" + "+".join("-" * (w + 2) for _, _, w in cols) + "+"
+    hdr = "|" + "|".join(f" {label:<{w}} " for label, _, w in cols) + "|"
     print()
     print(sep)
     print(hdr)
@@ -324,29 +331,31 @@ def _print_header(video_path: str, models: list[str], device: str | None) -> Non
 # System info
 # ===========================================================================
 
+
 def _collect_system_info() -> dict:
     """Collect platform and library versions for the report metadata."""
     info: dict = {
-        "platform":    platform.platform(),
-        "python":      platform.python_version(),
-        "cpu":         platform.processor() or platform.machine(),
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "cpu": platform.processor() or platform.machine(),
     }
     try:
         import torch
-        info["torch"]    = torch.__version__
-        info["cuda"]     = torch.version.cuda or "N/A"
-        info["mps"]      = str(
-            hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-        )
+
+        info["torch"] = torch.__version__
+        info["cuda"] = torch.version.cuda or "N/A"
+        info["mps"] = str(hasattr(torch.backends, "mps") and torch.backends.mps.is_available())
     except ImportError:
         pass
     try:
         import ultralytics
+
         info["ultralytics"] = ultralytics.__version__
     except ImportError:
         pass
     try:
         import cv2
+
         info["opencv"] = cv2.__version__
     except ImportError:
         pass
@@ -356,6 +365,7 @@ def _collect_system_info() -> dict:
 # ===========================================================================
 # Report saving
 # ===========================================================================
+
 
 def _save_report(
     results: list[dict],
@@ -367,11 +377,11 @@ def _save_report(
     report_path = str(Path(output_dir) / DEFAULT_EVAL_REPORT_FILENAME)
 
     doc = {
-        "generated_at":  datetime.now(timezone.utc).isoformat(),
-        "visiontrack":   __version__,
-        "input_video":   video_path,
-        "system":        _collect_system_info(),
-        "results":       results,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "visiontrack": __version__,
+        "input_video": video_path,
+        "system": _collect_system_info(),
+        "results": results,
     }
 
     with open(report_path, "w", encoding="utf-8") as fh:
@@ -384,10 +394,11 @@ def _save_report(
 # Main
 # ===========================================================================
 
+
 def main() -> None:
     """Entry point registered in pyproject.toml as ``visiontrack-eval``."""
     parser = build_parser()
-    args   = parser.parse_args()
+    args = parser.parse_args()
     validate_args(args, parser)
 
     _print_header(args.video, args.models, args.device)
@@ -402,13 +413,13 @@ def main() -> None:
         )
 
         result = _run_model(
-            model_name   = model_name,
-            video_path   = args.video,
-            config_path  = args.config,
-            device       = args.device,
-            output_dir   = model_output_dir,
-            save_video   = args.save_video,
-            skip_frames  = args.skip_frames,
+            model_name=model_name,
+            video_path=args.video,
+            config_path=args.config,
+            device=args.device,
+            output_dir=model_output_dir,
+            save_video=args.save_video,
+            skip_frames=args.skip_frames,
         )
         results.append(result)
 

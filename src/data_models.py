@@ -8,7 +8,6 @@ raw tuples and ensure consistent data shapes across all modules.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -56,7 +55,7 @@ class BoundingBox:
         return [int(self.x1), int(self.y1), int(self.x2), int(self.y2)]
 
     @classmethod
-    def from_list(cls, coords: list[float]) -> "BoundingBox":
+    def from_list(cls, coords: list[float]) -> BoundingBox:
         """Create a BoundingBox from a [x1, y1, x2, y2] list."""
         return cls(x1=coords[0], y1=coords[1], x2=coords[2], y2=coords[3])
 
@@ -82,7 +81,9 @@ class Detection:
             raise ValueError(f"class_id must be >= 0, got {self.class_id}")
 
     @classmethod
-    def from_raw(cls, x1: float, y1: float, x2: float, y2: float, conf: float, class_id: int) -> "Detection":
+    def from_raw(
+        cls, x1: float, y1: float, x2: float, y2: float, conf: float, class_id: int
+    ) -> Detection:
         """Convenience constructor from raw coordinate values."""
         return cls(
             bbox=BoundingBox(x1=x1, y1=y1, x2=x2, y2=y2),
@@ -133,7 +134,7 @@ class Track:
         class_id: int,
         frame_id: int,
         timestamp: float,
-    ) -> "Track":
+    ) -> Track:
         """Convenience constructor from raw coordinate values."""
         return cls(
             track_id=track_id,
@@ -228,9 +229,9 @@ class PipelineSummary:
     unique_visitors: int
     peak_concurrent_tracks: int
     avg_dwell_time: float
-    output_video_path: Optional[str] = None
-    output_json_path: Optional[str] = None
-    output_csv_path: Optional[str] = None
+    output_video_path: str | None = None
+    output_json_path: str | None = None
+    output_csv_path: str | None = None
 
     def __str__(self) -> str:
         lines = [

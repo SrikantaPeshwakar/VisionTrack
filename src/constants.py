@@ -115,26 +115,26 @@ HUD_ALPHA: float = 0.6
 # Each entry is (B, G, R) — OpenCV uses BGR.
 # 20 visually distinct colours that work well on dark and light backgrounds.
 COLOR_PALETTE: list[tuple[int, int, int]] = [
-    (255,  56,  56),   # 0  red
-    ( 56, 255,  56),   # 1  green
-    ( 56,  56, 255),   # 2  blue
-    (255, 157,  56),   # 3  orange
-    (255,  56, 157),   # 4  pink
-    ( 56, 255, 255),   # 5  cyan
-    (255, 255,  56),   # 6  yellow
-    (157,  56, 255),   # 7  purple
-    ( 56, 157, 255),   # 8  sky blue
-    (157, 255,  56),   # 9  lime
-    (255, 100, 100),   # 10 light red
-    (100, 255, 100),   # 11 light green
-    (100, 100, 255),   # 12 light blue
-    (255, 200, 100),   # 13 peach
-    (200, 100, 255),   # 14 lavender
-    (100, 255, 200),   # 15 mint
-    (255, 100, 200),   # 16 rose
-    (200, 255, 100),   # 17 yellow-green
-    (100, 200, 255),   # 18 light sky
-    (255, 180,  50),   # 19 amber
+    (255, 56, 56),  # 0  red
+    (56, 255, 56),  # 1  green
+    (56, 56, 255),  # 2  blue
+    (255, 157, 56),  # 3  orange
+    (255, 56, 157),  # 4  pink
+    (56, 255, 255),  # 5  cyan
+    (255, 255, 56),  # 6  yellow
+    (157, 56, 255),  # 7  purple
+    (56, 157, 255),  # 8  sky blue
+    (157, 255, 56),  # 9  lime
+    (255, 100, 100),  # 10 light red
+    (100, 255, 100),  # 11 light green
+    (100, 100, 255),  # 12 light blue
+    (255, 200, 100),  # 13 peach
+    (200, 100, 255),  # 14 lavender
+    (100, 255, 200),  # 15 mint
+    (255, 100, 200),  # 16 rose
+    (200, 255, 100),  # 17 yellow-green
+    (100, 200, 255),  # 18 light sky
+    (255, 180, 50),  # 19 amber
 ]
 
 # Fallback colour when track_id is somehow out of palette range

@@ -15,6 +15,7 @@ Covers:
 import os
 import sys
 import textwrap
+
 import pytest
 
 # ---------------------------------------------------------------------------
@@ -24,13 +25,13 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from src.config_manager import ConfigManager, _Namespace
 from exceptions import ConfigurationError
-
+from src.config_manager import ConfigManager, _Namespace
 
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def _write_config(tmp_path, content: str) -> str:
     """Write a YAML string to a temp file and return its path."""
@@ -83,6 +84,7 @@ VALID_YAML = """\
 # _Namespace
 # ===========================================================================
 
+
 class TestNamespace:
     def test_flat_access(self):
         ns = _Namespace({"a": 1, "b": "hello"})
@@ -121,6 +123,7 @@ class TestNamespace:
 # ===========================================================================
 # Happy-path loading
 # ===========================================================================
+
 
 class TestConfigManagerLoad:
     def test_loads_real_config(self):
@@ -161,6 +164,7 @@ class TestConfigManagerLoad:
 # ===========================================================================
 # Nested attribute access
 # ===========================================================================
+
 
 class TestNestedAccess:
     @pytest.fixture
@@ -210,9 +214,12 @@ class TestNestedAccess:
 # Validation — model section
 # ===========================================================================
 
+
 class TestValidationModel:
     def _make(self, tmp_path, overrides: dict) -> str:
-        import yaml, copy
+
+        import yaml
+
         base = yaml.safe_load(textwrap.dedent(VALID_YAML))
         base["model"].update(overrides)
         p = tmp_path / "cfg.yaml"
@@ -263,9 +270,11 @@ class TestValidationModel:
 # Validation — device section
 # ===========================================================================
 
+
 class TestValidationDevice:
     def _make(self, tmp_path, overrides: dict) -> str:
         import yaml
+
         base = yaml.safe_load(textwrap.dedent(VALID_YAML))
         base["device"].update(overrides)
         p = tmp_path / "cfg.yaml"
@@ -290,9 +299,11 @@ class TestValidationDevice:
 # Validation — video section
 # ===========================================================================
 
+
 class TestValidationVideo:
     def _make(self, tmp_path, overrides: dict) -> str:
         import yaml
+
         base = yaml.safe_load(textwrap.dedent(VALID_YAML))
         base["video"].update(overrides)
         p = tmp_path / "cfg.yaml"
@@ -324,9 +335,11 @@ class TestValidationVideo:
 # Validation — visualization section
 # ===========================================================================
 
+
 class TestValidationVisualization:
     def _make(self, tmp_path, overrides: dict) -> str:
         import yaml
+
         base = yaml.safe_load(textwrap.dedent(VALID_YAML))
         base["visualization"].update(overrides)
         p = tmp_path / "cfg.yaml"
@@ -355,9 +368,11 @@ class TestValidationVisualization:
 # Validation — analytics & logging sections
 # ===========================================================================
 
+
 class TestValidationAnalyticsLogging:
     def _make_analytics(self, tmp_path, overrides: dict) -> str:
         import yaml
+
         base = yaml.safe_load(textwrap.dedent(VALID_YAML))
         base["analytics"].update(overrides)
         p = tmp_path / "cfg.yaml"
@@ -366,6 +381,7 @@ class TestValidationAnalyticsLogging:
 
     def _make_logging(self, tmp_path, overrides: dict) -> str:
         import yaml
+
         base = yaml.safe_load(textwrap.dedent(VALID_YAML))
         base["logging"].update(overrides)
         p = tmp_path / "cfg.yaml"
@@ -400,13 +416,24 @@ class TestValidationAnalyticsLogging:
 # Missing required sections
 # ===========================================================================
 
+
 class TestMissingSection:
-    @pytest.mark.parametrize("section", [
-        "model", "device", "tracker", "video",
-        "visualization", "export", "analytics", "logging",
-    ])
+    @pytest.mark.parametrize(
+        "section",
+        [
+            "model",
+            "device",
+            "tracker",
+            "video",
+            "visualization",
+            "export",
+            "analytics",
+            "logging",
+        ],
+    )
     def test_missing_section_raises(self, tmp_path, section):
         import yaml
+
         base = yaml.safe_load(textwrap.dedent(VALID_YAML))
         del base[section]
         p = tmp_path / "cfg.yaml"
@@ -418,6 +445,7 @@ class TestMissingSection:
 # ===========================================================================
 # apply_overrides (CLI)
 # ===========================================================================
+
 
 class TestApplyOverrides:
     @pytest.fixture
@@ -488,6 +516,7 @@ class TestApplyOverrides:
 # Environment variable overrides
 # ===========================================================================
 
+
 class TestEnvOverrides:
     @pytest.fixture
     def cfg_path(self, tmp_path):
@@ -544,6 +573,7 @@ class TestEnvOverrides:
 # Helper methods
 # ===========================================================================
 
+
 class TestHelperMethods:
     @pytest.fixture
     def cfg(self, tmp_path):
@@ -570,6 +600,7 @@ class TestHelperMethods:
 
     def test_is_visualization_disabled_when_all_false(self, tmp_path):
         import yaml
+
         base = yaml.safe_load(textwrap.dedent(VALID_YAML))
         for flag in ["show_boxes", "show_ids", "show_unique_count", "show_fps"]:
             base["visualization"][flag] = False
@@ -581,6 +612,7 @@ class TestHelperMethods:
     def test_is_visualization_enabled_partial(self, tmp_path):
         """At least one flag True → enabled."""
         import yaml
+
         base = yaml.safe_load(textwrap.dedent(VALID_YAML))
         base["visualization"]["show_boxes"] = False
         base["visualization"]["show_ids"] = False
@@ -596,6 +628,7 @@ class TestHelperMethods:
 # to_dict round-trip
 # ===========================================================================
 
+
 class TestToDict:
     @pytest.fixture
     def cfg(self, tmp_path):
@@ -607,8 +640,16 @@ class TestToDict:
 
     def test_to_dict_has_all_sections(self, cfg):
         d = cfg.to_dict()
-        for section in ["model", "device", "tracker", "video",
-                        "visualization", "export", "analytics", "logging"]:
+        for section in [
+            "model",
+            "device",
+            "tracker",
+            "video",
+            "visualization",
+            "export",
+            "analytics",
+            "logging",
+        ]:
             assert section in d, f"Missing section: {section}"
 
     def test_to_dict_values_match_attributes(self, cfg):
@@ -621,6 +662,7 @@ class TestToDict:
     def test_to_dict_is_serialisable(self, cfg):
         """to_dict() result must be JSON-serialisable for export metadata."""
         import json
+
         d = cfg.to_dict()
         # Should not raise
         json.dumps(d)

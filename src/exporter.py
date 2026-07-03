@@ -72,11 +72,11 @@ class Exporter:
         config: Loaded ConfigManager instance.
     """
 
-    def __init__(self, config: "ConfigManager") -> None:
+    def __init__(self, config: ConfigManager) -> None:
         self.save_video: bool = config.export.save_video
-        self.save_json: bool  = config.export.save_json
-        self.save_csv: bool   = config.export.save_csv
-        self._codec: str      = config.video.output_codec
+        self.save_json: bool = config.export.save_json
+        self.save_csv: bool = config.export.save_csv
+        self._codec: str = config.video.output_codec
 
         # State set by prepare()
         self.output_dir: str = ""
@@ -123,12 +123,8 @@ class Exporter:
         self._frames_written = 0
 
         if self.save_video:
-            self._video_path = str(
-                Path(self.output_dir) / DEFAULT_VIDEO_FILENAME
-            )
-            self._video_writer = self._open_video_writer(
-                self._video_path, fps, width, height
-            )
+            self._video_path = str(Path(self.output_dir) / DEFAULT_VIDEO_FILENAME)
+            self._video_writer = self._open_video_writer(self._video_path, fps, width, height)
 
         log.info(
             "Exporter prepared — output_dir='%s', %dx%d @ %.1f FPS.",
@@ -222,9 +218,7 @@ class Exporter:
             self._save_csv(csv_path, frame_results)
             summary.output_csv_path = csv_path
 
-        log.info(
-            "Exporter finalised — outputs in '%s'.", self.output_dir
-        )
+        log.info("Exporter finalised — outputs in '%s'.", self.output_dir)
         return summary
 
     # ------------------------------------------------------------------
@@ -301,32 +295,34 @@ class Exporter:
         doc = {
             "metadata": {
                 "generated_at": datetime.now(timezone.utc).isoformat(),
-                "input_video":  video_path,
-                "config":       config_dict,
+                "input_video": video_path,
+                "config": config_dict,
             },
             "summary": {
-                "total_frames":           summary.total_frames,
-                "total_processing_time":  round(summary.total_processing_time, 3),
-                "avg_fps":                round(summary.avg_fps, 2),
-                "avg_inference_time_ms":  round(summary.avg_inference_time_ms, 2),
-                "unique_visitors":        summary.unique_visitors,
+                "total_frames": summary.total_frames,
+                "total_processing_time": round(summary.total_processing_time, 3),
+                "avg_fps": round(summary.avg_fps, 2),
+                "avg_inference_time_ms": round(summary.avg_inference_time_ms, 2),
+                "unique_visitors": summary.unique_visitors,
                 "peak_concurrent_tracks": summary.peak_concurrent_tracks,
-                "avg_dwell_time":         round(summary.avg_dwell_time, 3),
+                "avg_dwell_time": round(summary.avg_dwell_time, 3),
             },
             "analytics": analytics_summary,
             "tracks": [
                 {
-                    "track_id":           ts.track_id,
-                    "first_seen_frame":   ts.first_seen_frame,
-                    "last_seen_frame":    ts.last_seen_frame,
-                    "first_seen_time":    round(ts.first_seen_time, 4),
-                    "last_seen_time":     round(ts.last_seen_time, 4),
-                    "dwell_time":         round(ts.dwell_time, 4),
-                    "total_appearances":  ts.total_appearances,
+                    "track_id": ts.track_id,
+                    "first_seen_frame": ts.first_seen_frame,
+                    "last_seen_frame": ts.last_seen_frame,
+                    "first_seen_time": round(ts.first_seen_time, 4),
+                    "last_seen_time": round(ts.last_seen_time, 4),
+                    "dwell_time": round(ts.dwell_time, 4),
+                    "total_appearances": ts.total_appearances,
                     "trajectory": [
                         {
-                            "x1": round(b.x1, 1), "y1": round(b.y1, 1),
-                            "x2": round(b.x2, 1), "y2": round(b.y2, 1),
+                            "x1": round(b.x1, 1),
+                            "y1": round(b.y1, 1),
+                            "x2": round(b.x2, 1),
+                            "y2": round(b.y2, 1),
                         }
                         for b in ts.trajectory
                     ],
@@ -367,9 +363,15 @@ class Exporter:
             frame_results: Per-frame FrameResult list from Analytics.
         """
         fieldnames = [
-            "frame_id", "timestamp", "track_id",
-            "x1", "y1", "x2", "y2",
-            "confidence", "fps",
+            "frame_id",
+            "timestamp",
+            "track_id",
+            "x1",
+            "y1",
+            "x2",
+            "y2",
+            "confidence",
+            "fps",
         ]
 
         try:
@@ -379,17 +381,19 @@ class Exporter:
 
                 for fr in frame_results:
                     for track in fr.tracks:
-                        writer.writerow({
-                            "frame_id":   fr.frame_id,
-                            "timestamp":  round(fr.timestamp, 4),
-                            "track_id":   track.track_id,
-                            "x1":         round(track.bbox.x1, 1),
-                            "y1":         round(track.bbox.y1, 1),
-                            "x2":         round(track.bbox.x2, 1),
-                            "y2":         round(track.bbox.y2, 1),
-                            "confidence": round(track.confidence, 4),
-                            "fps":        round(fr.fps, 2),
-                        })
+                        writer.writerow(
+                            {
+                                "frame_id": fr.frame_id,
+                                "timestamp": round(fr.timestamp, 4),
+                                "track_id": track.track_id,
+                                "x1": round(track.bbox.x1, 1),
+                                "y1": round(track.bbox.y1, 1),
+                                "x2": round(track.bbox.x2, 1),
+                                "y2": round(track.bbox.y2, 1),
+                                "confidence": round(track.confidence, 4),
+                                "fps": round(fr.fps, 2),
+                            }
+                        )
 
             log.info("CSV tracks saved: '%s'.", path)
         except OSError as exc:

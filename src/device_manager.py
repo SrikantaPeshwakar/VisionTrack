@@ -16,8 +16,8 @@ Usage:
 """
 
 import torch
+
 from loggers import get_logger
-from exceptions import DeviceError
 
 log = get_logger(__name__)
 
@@ -154,7 +154,7 @@ class DeviceManager:
                 "CUDA device selected: %s — %s (%.1f GB VRAM)",
                 device_str,
                 gpu_name,
-                vram / 1024 ** 3,
+                vram / 1024**3,
             )
             return device_str
         except Exception as exc:

@@ -22,7 +22,8 @@ from __future__ import annotations
 
 import os
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 
@@ -30,14 +31,14 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from src.data_models import BoundingBox, Detection, Track, TrackSummary
-from src.constants import PERSON_CLASS_ID
 from exceptions import TrackingError
-
+from src.constants import PERSON_CLASS_ID
+from src.data_models import BoundingBox, Detection, Track, TrackSummary
 
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def _make_config(
     tracker_config: str = "config/botsort.yaml",
@@ -49,9 +50,7 @@ def _make_config(
     return cfg
 
 
-def _make_detection(
-    x1=10.0, y1=20.0, x2=110.0, y2=120.0, conf=0.9
-) -> Detection:
+def _make_detection(x1=10.0, y1=20.0, x2=110.0, y2=120.0, conf=0.9) -> Detection:
     return Detection.from_raw(x1, y1, x2, y2, conf, PERSON_CLASS_ID)
 
 
@@ -92,6 +91,7 @@ def _make_tracking_result(
 def _make_tracker(cfg=None, model=None):
     """Construct a Tracker with a mock model."""
     from src.tracker import Tracker
+
     if cfg is None:
         cfg = _make_config()
     if model is None:
@@ -103,12 +103,15 @@ def _make_tracker(cfg=None, model=None):
 # Construction & repr
 # ===========================================================================
 
+
 class TestTrackerConstruction:
     def test_attributes_set_from_config(self):
-        tracker = _make_tracker(_make_config(
-            tracker_config="config/botsort.yaml",
-            persist=True,
-        ))
+        tracker = _make_tracker(
+            _make_config(
+                tracker_config="config/botsort.yaml",
+                persist=True,
+            )
+        )
         assert tracker.tracker_config == "config/botsort.yaml"
         assert tracker.persist is True
 
@@ -146,6 +149,7 @@ class TestTrackerConstruction:
 # ===========================================================================
 # _parse_results
 # ===========================================================================
+
 
 class TestParseResults:
     @pytest.fixture(autouse=True)
@@ -187,7 +191,7 @@ class TestParseResults:
     def test_multiple_tracks_parsed(self):
         result = _make_tracking_result(
             [
-                [10.0,  20.0, 110.0, 120.0, 0.9, PERSON_CLASS_ID],
+                [10.0, 20.0, 110.0, 120.0, 0.9, PERSON_CLASS_ID],
                 [200.0, 50.0, 300.0, 200.0, 0.7, PERSON_CLASS_ID],
                 [400.0, 10.0, 500.0, 300.0, 0.6, PERSON_CLASS_ID],
             ],
@@ -200,7 +204,7 @@ class TestParseResults:
     def test_non_person_class_filtered(self):
         result = _make_tracking_result(
             [
-                [10.0, 20.0, 110.0, 120.0, 0.9, 2],    # car
+                [10.0, 20.0, 110.0, 120.0, 0.9, 2],  # car
                 [200.0, 50.0, 300.0, 200.0, 0.8, 16],  # dog
             ],
             [1, 2],
@@ -212,7 +216,7 @@ class TestParseResults:
         result = _make_tracking_result(
             [
                 [10.0, 20.0, 110.0, 120.0, 0.9, PERSON_CLASS_ID],
-                [200.0, 50.0, 300.0, 200.0, 0.8, 2],   # car
+                [200.0, 50.0, 300.0, 200.0, 0.8, 2],  # car
             ],
             [1, 2],
         )
@@ -269,6 +273,7 @@ class TestParseResults:
 # track()
 # ===========================================================================
 
+
 class TestTrack:
     def _make_model_with_result(self, rows, ids):
         model = MagicMock()
@@ -306,7 +311,7 @@ class TestTrack:
         tracker = _make_tracker(model=model)
         result = tracker.track(
             np.zeros((480, 640, 3), dtype=np.uint8),
-            [],        # empty detections
+            [],  # empty detections
             frame_id=0,
             timestamp=0.0,
         )
@@ -360,6 +365,7 @@ class TestTrack:
 # History management
 # ===========================================================================
 
+
 class TestHistoryManagement:
     def _tracker_with_two_frames(self):
         """Return a Tracker that has processed two frames:
@@ -397,9 +403,9 @@ class TestHistoryManagement:
 
     def test_history_length_per_track(self):
         tracker = self._tracker_with_two_frames()
-        assert len(tracker.track_history[1]) == 2   # appeared in both frames
+        assert len(tracker.track_history[1]) == 2  # appeared in both frames
         assert len(tracker.track_history[2]) == 2
-        assert len(tracker.track_history[3]) == 1   # only frame 1
+        assert len(tracker.track_history[3]) == 1  # only frame 1
 
     def test_first_seen_correct(self):
         tracker = self._tracker_with_two_frames()
@@ -408,8 +414,8 @@ class TestHistoryManagement:
 
     def test_last_seen_updated(self):
         tracker = self._tracker_with_two_frames()
-        assert tracker.last_seen[1][0] == 1   # last seen in frame 1
-        assert tracker.last_seen[3][0] == 1   # only seen in frame 1
+        assert tracker.last_seen[1][0] == 1  # last seen in frame 1
+        assert tracker.last_seen[3][0] == 1  # only seen in frame 1
 
     def test_bbox_updated_per_frame(self):
         tracker = self._tracker_with_two_frames()
@@ -441,6 +447,7 @@ class TestHistoryManagement:
 # ===========================================================================
 # get_track_summary()
 # ===========================================================================
+
 
 class TestGetTrackSummary:
     @pytest.fixture
@@ -501,6 +508,7 @@ class TestGetTrackSummary:
 # get_all_summaries()
 # ===========================================================================
 
+
 class TestGetAllSummaries:
     def test_returns_list(self):
         tracker = _make_tracker()
@@ -521,7 +529,7 @@ class TestGetAllSummaries:
                 [200.0, 50.0, 300.0, 200.0, 0.7, PERSON_CLASS_ID],
                 [400.0, 10.0, 500.0, 300.0, 0.6, PERSON_CLASS_ID],
             ],
-            [5, 2, 9],   # deliberately unsorted
+            [5, 2, 9],  # deliberately unsorted
         )
         tracker.track(frame, [_make_detection()], frame_id=0, timestamp=0.0)
 
@@ -548,6 +556,7 @@ class TestGetAllSummaries:
 # ===========================================================================
 # reset()
 # ===========================================================================
+
 
 class TestReset:
     def test_reset_clears_all_state(self):

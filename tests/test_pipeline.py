@@ -19,8 +19,8 @@ from __future__ import annotations
 
 import os
 import sys
-from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pytest
 
@@ -28,16 +28,21 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from src.data_models import (
-    BoundingBox, Detection, FrameResult, PipelineSummary, Track, TrackSummary,
-)
-from src.constants import PERSON_CLASS_ID
 from exceptions import VideoIOError
-
+from src.constants import PERSON_CLASS_ID
+from src.data_models import (
+    BoundingBox,
+    Detection,
+    FrameResult,
+    PipelineSummary,
+    Track,
+    TrackSummary,
+)
 
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def _make_config(skip_frames: int = 0, model_type: str = "yolov8n") -> MagicMock:
     cfg = MagicMock()
@@ -87,23 +92,20 @@ def _make_pipeline(
     """
     from src.pipeline import VideoPipeline
 
-    cfg       = _make_config(skip_frames=skip_frames, model_type=model_type)
-    detector  = MagicMock()
-    tracker   = MagicMock()
+    cfg = _make_config(skip_frames=skip_frames, model_type=model_type)
+    detector = MagicMock()
+    tracker = MagicMock()
     analytics = MagicMock()
     visualizer = MagicMock()
-    exporter  = MagicMock()
+    exporter = MagicMock()
 
     # detector always returns one detection per frame
-    detector.detect.return_value = [
-        Detection.from_raw(10, 20, 110, 120, 0.9, PERSON_CLASS_ID)
-    ]
+    detector.detect.return_value = [Detection.from_raw(10, 20, 110, 120, 0.9, PERSON_CLASS_ID)]
 
     # tracker returns configurable tracks per frame
     if tracks_per_frame is None:
         tracks_per_frame = [[_make_track(1, i, i / 30.0)] for i in range(n_frames)]
-    tracker.track.side_effect = (
-        lambda frame, dets, frame_id, timestamp:
+    tracker.track.side_effect = lambda frame, dets, frame_id, timestamp: (
         tracks_per_frame[frame_id] if frame_id < len(tracks_per_frame) else []
     )
     tracker.all_track_ids = {1}
@@ -114,6 +116,7 @@ def _make_pipeline(
     # analytics returns a FrameResult per call
     def _analytics_update(frame_id, timestamp, tracks, detection_count, inference_time_ms):
         return _make_frame_result(frame_id, tracks, inference_time_ms)
+
     analytics.update.side_effect = _analytics_update
     analytics.get_summary.return_value = {"total_frames": n_frames}
 
@@ -123,9 +126,10 @@ def _make_pipeline(
     # exporter is a no-op for frame writes; finalise returns updated summary
     def _finalise(summary, *args, **kwargs):
         summary.output_video_path = "/tmp/vt_test/run_xyz/result.mp4"
-        summary.output_json_path  = "/tmp/vt_test/run_xyz/analytics.json"
-        summary.output_csv_path   = "/tmp/vt_test/run_xyz/tracks.csv"
+        summary.output_json_path = "/tmp/vt_test/run_xyz/analytics.json"
+        summary.output_csv_path = "/tmp/vt_test/run_xyz/tracks.csv"
         return summary
+
     exporter.finalise.side_effect = _finalise
 
     pipeline = VideoPipeline(cfg, detector, tracker, analytics, visualizer, exporter)
@@ -145,10 +149,10 @@ def _make_cap(n_frames: int = 3, fps: float = 30.0, w: int = 640, h: int = 480):
     cap = MagicMock()
     cap.isOpened.return_value = True
     cap.get.side_effect = lambda prop: {
-        0:  fps,    # CAP_PROP_FPS
-        7:  n_frames,  # CAP_PROP_FRAME_COUNT
-        3:  w,      # CAP_PROP_FRAME_WIDTH
-        4:  h,      # CAP_PROP_FRAME_HEIGHT
+        0: fps,  # CAP_PROP_FPS
+        7: n_frames,  # CAP_PROP_FRAME_COUNT
+        3: w,  # CAP_PROP_FRAME_WIDTH
+        4: h,  # CAP_PROP_FRAME_HEIGHT
     }.get(prop, 0)
     frame = np.zeros((h, w, 3), dtype=np.uint8)
     # read() returns (True, frame) for the first n_frames calls, then (False, None)
@@ -161,15 +165,16 @@ def _make_cap(n_frames: int = 3, fps: float = 30.0, w: int = 640, h: int = 480):
 # Construction & repr
 # ===========================================================================
 
+
 class TestPipelineConstruction:
     def test_attributes_stored(self):
         pipeline, mocks = _make_pipeline()
-        assert pipeline.config    is mocks["cfg"]
-        assert pipeline.detector  is mocks["detector"]
-        assert pipeline.tracker   is mocks["tracker"]
+        assert pipeline.config is mocks["cfg"]
+        assert pipeline.detector is mocks["detector"]
+        assert pipeline.tracker is mocks["tracker"]
         assert pipeline.analytics is mocks["analytics"]
         assert pipeline.visualizer is mocks["visualizer"]
-        assert pipeline.exporter  is mocks["exporter"]
+        assert pipeline.exporter is mocks["exporter"]
 
     def test_skip_frames_from_config(self):
         pipeline, _ = _make_pipeline(skip_frames=2)
@@ -190,6 +195,7 @@ class TestPipelineConstruction:
 # ===========================================================================
 # _open_video
 # ===========================================================================
+
 
 class TestOpenVideo:
     def test_missing_file_raises_video_io_error(self, tmp_path):
@@ -223,6 +229,7 @@ class TestOpenVideo:
 # _handle_interrupt
 # ===========================================================================
 
+
 class TestHandleInterrupt:
     def test_sets_interrupted_flag(self):
         pipeline, _ = _make_pipeline()
@@ -234,6 +241,7 @@ class TestHandleInterrupt:
 # ===========================================================================
 # _build_summary
 # ===========================================================================
+
 
 class TestBuildSummary:
     def test_zero_frames_returns_zero_fps(self):
@@ -277,8 +285,8 @@ class TestBuildSummary:
     def test_avg_dwell_time(self):
         pipeline, mocks = _make_pipeline()
         mocks["tracker"].get_all_summaries.return_value = [
-            TrackSummary(1, 0, 30, 0.0, 1.0, 30),   # dwell = 1.0s
-            TrackSummary(2, 0, 60, 0.0, 2.0, 60),   # dwell = 2.0s
+            TrackSummary(1, 0, 30, 0.0, 1.0, 30),  # dwell = 1.0s
+            TrackSummary(2, 0, 60, 0.0, 2.0, 60),  # dwell = 2.0s
         ]
         s = pipeline._build_summary(1.0, "/tmp", [_make_frame_result(0)])
         assert s.avg_dwell_time == pytest.approx(1.5)
@@ -298,6 +306,7 @@ class TestBuildSummary:
 # ===========================================================================
 # run() — full happy path
 # ===========================================================================
+
 
 class TestRunHappyPath:
     def _run(self, n_frames: int = 3, skip_frames: int = 0):
@@ -364,6 +373,7 @@ class TestRunHappyPath:
 # run() — skip_frames logic
 # ===========================================================================
 
+
 class TestSkipFrames:
     def test_skip_frames_reduces_detector_calls(self):
         """With skip_frames=1, every other frame is skipped → half the calls."""
@@ -374,12 +384,12 @@ class TestSkipFrames:
         pipeline, mocks = _make_pipeline(skip_frames=1, n_frames=n_frames)
         # tracker.track needs to handle only the processed frame_ids
         mocks["tracker"].track.side_effect = (
-            lambda frame, dets, frame_id, timestamp:
-            tracks_per_frame.get(frame_id, [])
+            lambda frame, dets, frame_id, timestamp: tracks_per_frame.get(frame_id, [])
         )
         mocks["analytics"].update.side_effect = (
-            lambda frame_id, timestamp, tracks, detection_count, inference_time_ms:
-            _make_frame_result(frame_id, tracks)
+            lambda frame_id, timestamp, tracks, detection_count, inference_time_ms: _make_frame_result(
+                frame_id, tracks
+            )
         )
 
         cap = _make_cap(n_frames=n_frames)
@@ -405,6 +415,7 @@ class TestSkipFrames:
 # ===========================================================================
 # run() — empty detections
 # ===========================================================================
+
 
 class TestEmptyDetections:
     def test_tracker_called_even_with_no_detections(self):
@@ -442,6 +453,7 @@ class TestEmptyDetections:
 # run() — VideoIOError
 # ===========================================================================
 
+
 class TestRunVideoIOError:
     def test_missing_video_raises_video_io_error(self):
         pipeline, _ = _make_pipeline()
@@ -463,20 +475,19 @@ class TestRunVideoIOError:
 # run() — interrupt handling
 # ===========================================================================
 
+
 class TestRunInterrupt:
     def test_interrupt_stops_loop_early(self):
         """Simulates Ctrl+C after the first frame by setting _interrupted=True."""
         n_frames = 5
         pipeline, mocks = _make_pipeline(n_frames=n_frames)
 
-        original_detect = mocks["detector"].detect
-
         call_count = {"n": 0}
 
         def detect_and_interrupt(frame):
             call_count["n"] += 1
             if call_count["n"] == 1:
-                pipeline._interrupted = True   # simulate SIGINT after frame 0
+                pipeline._interrupted = True  # simulate SIGINT after frame 0
             return [Detection.from_raw(10, 20, 110, 120, 0.9, PERSON_CLASS_ID)]
 
         mocks["detector"].detect.side_effect = detect_and_interrupt
@@ -493,7 +504,7 @@ class TestRunInterrupt:
 
     def test_cap_released_even_after_interrupt(self):
         pipeline, mocks = _make_pipeline(n_frames=3)
-        pipeline._interrupted = True   # interrupt before any frame
+        pipeline._interrupted = True  # interrupt before any frame
 
         cap = _make_cap(n_frames=3)
         with patch("src.pipeline.cv2.VideoCapture", return_value=cap):

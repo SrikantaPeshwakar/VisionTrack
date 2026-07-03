@@ -40,12 +40,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import cv2
-import numpy as np
 from tqdm import tqdm
 
 from exceptions import VideoIOError
 from loggers import get_logger
-from src.constants import DEFAULT_VIDEO_FILENAME
 from src.data_models import FrameResult, PipelineSummary
 
 if TYPE_CHECKING:
@@ -89,19 +87,19 @@ class VideoPipeline:
 
     def __init__(
         self,
-        config: "ConfigManager",
-        detector: "Detector",
-        tracker: "Tracker",
-        analytics: "Analytics",
-        visualizer: "Visualizer",
-        exporter: "Exporter",
+        config: ConfigManager,
+        detector: Detector,
+        tracker: Tracker,
+        analytics: Analytics,
+        visualizer: Visualizer,
+        exporter: Exporter,
     ) -> None:
-        self.config     = config
-        self.detector   = detector
-        self.tracker    = tracker
-        self.analytics  = analytics
+        self.config = config
+        self.detector = detector
+        self.tracker = tracker
+        self.analytics = analytics
         self.visualizer = visualizer
-        self.exporter   = exporter
+        self.exporter = exporter
 
         self._skip_frames: int = config.video.skip_frames
         self._interrupted: bool = False
@@ -141,10 +139,10 @@ class VideoPipeline:
 
         # ── Open video ──────────────────────────────────────────────────
         cap = self._open_video(video_path)
-        fps_in      = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        fps_in = cap.get(cv2.CAP_PROP_FPS) or 30.0
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        width        = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height       = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         log.info(
             "Video opened: %s | %dx%d | %.1f FPS | %d frames.",
@@ -156,7 +154,7 @@ class VideoPipeline:
         )
 
         # ── Prepare output directory ────────────────────────────────────
-        run_name   = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        run_name = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         output_dir = self.config.get_output_dir(run_name)
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -179,8 +177,8 @@ class VideoPipeline:
                 dynamic_ncols=True,
             )
 
-            frame_idx   = 0   # absolute frame counter (includes skipped)
-            processed   = 0   # frames actually sent through the pipeline
+            frame_idx = 0  # absolute frame counter (includes skipped)
+            processed = 0  # frames actually sent through the pipeline
 
             while True:
                 if self._interrupted:
@@ -254,7 +252,7 @@ class VideoPipeline:
 
         # ── Compute summary ──────────────────────────────────────────────
         total_time = time.perf_counter() - t_pipeline_start
-        summary    = self._build_summary(total_time, output_dir, frame_results)
+        summary = self._build_summary(total_time, output_dir, frame_results)
 
         # ── Finalise exports ─────────────────────────────────────────────
         summary = self.exporter.finalise(
@@ -329,19 +327,12 @@ class VideoPipeline:
         """
         n = len(frame_results)
         avg_fps = (n / total_time) if total_time > 0 else 0.0
-        avg_inf = (
-            sum(r.inference_time_ms for r in frame_results) / n if n > 0 else 0.0
-        )
-        peak_concurrent = (
-            max((r.active_track_count for r in frame_results), default=0)
-        )
+        avg_inf = sum(r.inference_time_ms for r in frame_results) / n if n > 0 else 0.0
+        peak_concurrent = max((r.active_track_count for r in frame_results), default=0)
 
         # Dwell time from tracker summaries
         summaries = self.tracker.get_all_summaries()
-        avg_dwell = (
-            sum(s.dwell_time for s in summaries) / len(summaries)
-            if summaries else 0.0
-        )
+        avg_dwell = sum(s.dwell_time for s in summaries) / len(summaries) if summaries else 0.0
 
         return PipelineSummary(
             total_frames=n,

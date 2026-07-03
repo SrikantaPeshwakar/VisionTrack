@@ -69,14 +69,14 @@ class Tracker:
                 ``model.track(..., persist=True)`` maintains state.
     """
 
-    def __init__(self, config: "ConfigManager", model: Any) -> None:
+    def __init__(self, config: ConfigManager, model: Any) -> None:
         self.tracker_config: str = config.tracker.config_file
         self.persist: bool = config.tracker.persist
 
         # Track state
         self.track_history: dict[int, list[Track]] = defaultdict(list)
-        self.first_seen: dict[int, tuple[int, float]] = {}   # id → (frame_id, ts)
-        self.last_seen: dict[int, tuple[int, float]] = {}    # id → (frame_id, ts)
+        self.first_seen: dict[int, tuple[int, float]] = {}  # id → (frame_id, ts)
+        self.last_seen: dict[int, tuple[int, float]] = {}  # id → (frame_id, ts)
         self.all_track_ids: set[int] = set()
 
         self._model = model
@@ -93,7 +93,7 @@ class Tracker:
     def track(
         self,
         frame: np.ndarray,
-        detections: list["Detection"],
+        detections: list[Detection],
         frame_id: int,
         timestamp: float,
     ) -> list[Track]:
@@ -239,7 +239,7 @@ class Tracker:
             x1, y1, x2, y2 = float(row[0]), float(row[1]), float(row[2]), float(row[3])
             # Clamp to [0, 1] — BoT-SORT with fuse_score=True can produce
             # values slightly above 1.0 (conf × IoU fusion).
-            conf     = min(1.0, max(0.0, float(row[4])))
+            conf = min(1.0, max(0.0, float(row[4])))
             class_id = int(row[5])
             track_id = int(track_ids[i])
 
@@ -251,7 +251,10 @@ class Tracker:
             if x2 <= x1 or y2 <= y1:
                 log.debug(
                     "Skipping degenerate track bbox [%.1f, %.1f, %.1f, %.1f]",
-                    x1, y1, x2, y2,
+                    x1,
+                    y1,
+                    x2,
+                    y2,
                 )
                 continue
 

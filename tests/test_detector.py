@@ -20,8 +20,8 @@ from __future__ import annotations
 
 import os
 import sys
-import types
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pytest
 
@@ -29,20 +29,20 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from src.data_models import BoundingBox, Detection
-from src.constants import PERSON_CLASS_ID
 from exceptions import DetectionError, ModelLoadError
-
+from src.constants import PERSON_CLASS_ID
+from src.data_models import BoundingBox, Detection
 
 # ===========================================================================
 # Helpers & Fixtures
 # ===========================================================================
 
+
 def _make_config(
     model_type: str = "yolov8n",
     conf: float = 0.25,
     iou: float = 0.45,
-    warmup: int = 0,          # 0 by default so tests run fast
+    warmup: int = 0,  # 0 by default so tests run fast
     device: str = "cpu",
     weights_dir: str = "models",
 ) -> MagicMock:
@@ -92,7 +92,9 @@ def _make_detector(cfg=None, device="cpu", mock_yolo=None):
 
     with patch("src.detector.YOLO", return_value=yolo_instance, create=True):
         # Patch the import inside _load_model
-        with patch.dict("sys.modules", {"ultralytics": MagicMock(YOLO=MagicMock(return_value=yolo_instance))}):
+        with patch.dict(
+            "sys.modules", {"ultralytics": MagicMock(YOLO=MagicMock(return_value=yolo_instance))}
+        ):
             detector = Detector(cfg, device=device)
             detector._model = yolo_instance
     return detector
@@ -102,12 +104,14 @@ def _make_detector(cfg=None, device="cpu", mock_yolo=None):
 # _is_valid_frame
 # ===========================================================================
 
+
 class TestIsValidFrame:
     """Static method — test directly without constructing a full Detector."""
 
     @pytest.fixture(autouse=True)
     def _import(self):
         from src.detector import Detector
+
         self.fn = Detector._is_valid_frame
 
     def test_valid_bgr_frame(self):
@@ -148,6 +152,7 @@ class TestIsValidFrame:
 # _parse_results
 # ===========================================================================
 
+
 class TestParseResults:
     @pytest.fixture(autouse=True)
     def _detector(self):
@@ -187,8 +192,8 @@ class TestParseResults:
     def test_non_person_class_filtered(self):
         """Car (class 2) and dog (class 16) must be excluded."""
         rows = [
-            [10.0, 20.0, 110.0, 120.0, 0.9, 2],    # car
-            [200.0, 50.0, 300.0, 200.0, 0.8, 16],   # dog
+            [10.0, 20.0, 110.0, 120.0, 0.9, 2],  # car
+            [200.0, 50.0, 300.0, 200.0, 0.8, 16],  # dog
         ]
         dets = self.detector._parse_results(_make_results(rows))
         assert dets == []
@@ -251,6 +256,7 @@ class TestParseResults:
 # ===========================================================================
 # detect()
 # ===========================================================================
+
 
 class TestDetect:
     @pytest.fixture(autouse=True)
@@ -334,14 +340,17 @@ class TestDetect:
 # Detector construction & repr
 # ===========================================================================
 
+
 class TestDetectorConstruction:
     def test_attributes_set_from_config(self):
-        det = _make_detector(_make_config(
-            model_type="yolov8m",
-            conf=0.4,
-            iou=0.5,
-            device="cpu",
-        ))
+        det = _make_detector(
+            _make_config(
+                model_type="yolov8m",
+                conf=0.4,
+                iou=0.5,
+                device="cpu",
+            )
+        )
         assert det.model_type == "yolov8m"
         assert det.confidence_threshold == pytest.approx(0.4)
         assert det.iou_threshold == pytest.approx(0.5)
@@ -369,16 +378,18 @@ class TestDetectorConstruction:
 # Warmup
 # ===========================================================================
 
+
 class TestWarmup:
     def test_warmup_called_n_times(self):
         """When warmup_frames=3, model should be called 3 times during init."""
         cfg = _make_config(warmup=3)
         yolo_instance = MagicMock()
         yolo_instance.return_value = _make_results([])
-        with patch.dict("sys.modules", {
-            "ultralytics": MagicMock(YOLO=MagicMock(return_value=yolo_instance))
-        }):
+        with patch.dict(
+            "sys.modules", {"ultralytics": MagicMock(YOLO=MagicMock(return_value=yolo_instance))}
+        ):
             from src.detector import Detector
+
             det = Detector(cfg, device="cpu")
             det._model = yolo_instance  # not counted, already set
 
@@ -390,11 +401,12 @@ class TestWarmup:
         cfg = _make_config(warmup=0)
         yolo_instance = MagicMock()
         yolo_instance.return_value = _make_results([])
-        with patch.dict("sys.modules", {
-            "ultralytics": MagicMock(YOLO=MagicMock(return_value=yolo_instance))
-        }):
+        with patch.dict(
+            "sys.modules", {"ultralytics": MagicMock(YOLO=MagicMock(return_value=yolo_instance))}
+        ):
             from src.detector import Detector
-            det = Detector(cfg, device="cpu")
+
+            Detector(cfg, device="cpu")
 
         assert yolo_instance.call_count == 0
 
@@ -403,10 +415,11 @@ class TestWarmup:
         cfg = _make_config(warmup=2)
         yolo_instance = MagicMock()
         yolo_instance.side_effect = RuntimeError("warmup fail")
-        with patch.dict("sys.modules", {
-            "ultralytics": MagicMock(YOLO=MagicMock(return_value=yolo_instance))
-        }):
+        with patch.dict(
+            "sys.modules", {"ultralytics": MagicMock(YOLO=MagicMock(return_value=yolo_instance))}
+        ):
             from src.detector import Detector
+
             # Should not raise
             det = Detector(cfg, device="cpu")
         assert det is not None
@@ -416,6 +429,7 @@ class TestWarmup:
 # Model loading
 # ===========================================================================
 
+
 class TestModelLoading:
     def test_model_load_error_raised_on_yolo_failure(self, tmp_path):
         """If YOLO() raises, Detector must re-raise as ModelLoadError."""
@@ -424,10 +438,9 @@ class TestModelLoading:
         def _bad_yolo(*args, **kwargs):
             raise RuntimeError("weights corrupted")
 
-        with patch.dict("sys.modules", {
-            "ultralytics": MagicMock(YOLO=_bad_yolo)
-        }):
+        with patch.dict("sys.modules", {"ultralytics": MagicMock(YOLO=_bad_yolo)}):
             from src.detector import Detector
+
             with pytest.raises(ModelLoadError, match="yolov8n"):
                 Detector(cfg, device="cpu")
 
@@ -443,6 +456,7 @@ class TestModelLoading:
 
         with patch.dict("sys.modules", {"ultralytics": MagicMock(YOLO=yolo_cls)}):
             from src.detector import Detector
+
             Detector(cfg, device="cpu")
 
         # YOLO constructor must have been called with the local file path
@@ -459,6 +473,7 @@ class TestModelLoading:
 
         with patch.dict("sys.modules", {"ultralytics": MagicMock(YOLO=yolo_cls)}):
             from src.detector import Detector
+
             Detector(cfg, device="cpu")
 
         call_arg = yolo_cls.call_args[0][0]

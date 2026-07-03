@@ -19,21 +19,21 @@ from __future__ import annotations
 
 import os
 import sys
-import time
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from src.data_models import BoundingBox, FrameResult, Track
 from src.constants import PERSON_CLASS_ID
-
+from src.data_models import BoundingBox, FrameResult, Track
 
 # ===========================================================================
 # Helpers
 # ===========================================================================
+
 
 def _make_config(ema_alpha: float = 0.1) -> MagicMock:
     cfg = MagicMock()
@@ -54,6 +54,7 @@ def _make_track(track_id: int, frame_id: int = 0, ts: float = 0.0) -> Track:
 
 def _make_analytics(ema_alpha: float = 0.1):
     from src.analytics import Analytics
+
     return Analytics(_make_config(ema_alpha))
 
 
@@ -77,6 +78,7 @@ def _call_update(
 # ===========================================================================
 # Construction & repr
 # ===========================================================================
+
 
 class TestAnalyticsConstruction:
     def test_initial_unique_visitor_count_zero(self):
@@ -122,6 +124,7 @@ class TestAnalyticsConstruction:
 # update() — FrameResult
 # ===========================================================================
 
+
 class TestUpdateFrameResult:
     def test_returns_frame_result_instance(self):
         a = _make_analytics()
@@ -159,7 +162,7 @@ class TestUpdateFrameResult:
         a = _make_analytics()
         tracks = [_make_track(1)]
         result = _call_update(a, tracks=tracks)
-        tracks.append(_make_track(2))   # mutate original
+        tracks.append(_make_track(2))  # mutate original
         assert len(result.tracks) == 1  # result unchanged
 
     def test_empty_tracks_result(self):
@@ -184,6 +187,7 @@ class TestUpdateFrameResult:
 # update() — unique visitors
 # ===========================================================================
 
+
 class TestUniqueVisitors:
     def test_single_track_increments_count(self):
         a = _make_analytics()
@@ -205,7 +209,7 @@ class TestUniqueVisitors:
     def test_reappearing_id_not_double_counted(self):
         a = _make_analytics()
         _call_update(a, frame_id=0, tracks=[_make_track(1)])
-        _call_update(a, frame_id=1, tracks=[])          # ID 1 disappears
+        _call_update(a, frame_id=1, tracks=[])  # ID 1 disappears
         _call_update(a, frame_id=2, tracks=[_make_track(1)])  # reappears
         assert a.unique_visitor_count == 1
 
@@ -224,6 +228,7 @@ class TestUniqueVisitors:
 # update() — aggregate counters
 # ===========================================================================
 
+
 class TestAggregateCounters:
     def test_total_detection_count_accumulates(self):
         a = _make_analytics()
@@ -233,9 +238,9 @@ class TestAggregateCounters:
 
     def test_peak_concurrent_tracks_updated(self):
         a = _make_analytics()
-        _call_update(a, tracks=[_make_track(1)])                        # 1 track
-        _call_update(a, tracks=[_make_track(1), _make_track(2)])        # 2 tracks — new peak
-        _call_update(a, tracks=[_make_track(1)])                        # back to 1
+        _call_update(a, tracks=[_make_track(1)])  # 1 track
+        _call_update(a, tracks=[_make_track(1), _make_track(2)])  # 2 tracks — new peak
+        _call_update(a, tracks=[_make_track(1)])  # back to 1
         assert a.peak_concurrent_tracks == 2
 
     def test_peak_concurrent_never_decreases(self):
@@ -265,6 +270,7 @@ class TestAggregateCounters:
 # EMA FPS
 # ===========================================================================
 
+
 class TestEmaFps:
     def test_first_frame_fps_is_zero(self):
         """First call cannot measure an interval — must return 0.0."""
@@ -286,7 +292,7 @@ class TestEmaFps:
 
         with patch("src.analytics.time") as mock_time:
             mock_time.perf_counter.side_effect = t_calls
-            _call_update(a, frame_id=0)   # seeds _last_frame_time = 0.0
+            _call_update(a, frame_id=0)  # seeds _last_frame_time = 0.0
             result = _call_update(a, frame_id=1)  # Δt=0.1 → 10 FPS
 
         assert result.fps == pytest.approx(10.0, rel=0.01)
@@ -319,6 +325,7 @@ class TestEmaFps:
 # get_current_stats()
 # ===========================================================================
 
+
 class TestGetCurrentStats:
     def test_empty_state_returns_zeros(self):
         a = _make_analytics()
@@ -349,6 +356,7 @@ class TestGetCurrentStats:
 # get_summary()
 # ===========================================================================
 
+
 class TestGetSummary:
     def test_returns_dict(self):
         a = _make_analytics()
@@ -358,8 +366,13 @@ class TestGetSummary:
         a = _make_analytics()
         s = a.get_summary()
         for key in [
-            "total_frames", "unique_visitors", "peak_concurrent_tracks",
-            "total_detections", "avg_fps", "avg_inference_ms", "frames",
+            "total_frames",
+            "unique_visitors",
+            "peak_concurrent_tracks",
+            "total_detections",
+            "avg_fps",
+            "avg_inference_ms",
+            "frames",
         ]:
             assert key in s, f"Missing key: {key}"
 
@@ -405,8 +418,15 @@ class TestGetSummary:
         a = _make_analytics()
         _call_update(a, frame_id=0, tracks=[_make_track(1)], detection_count=1, inference_ms=25.0)
         frame_entry = a.get_summary()["frames"][0]
-        for key in ["frame_id", "timestamp", "active_tracks", "track_ids",
-                    "detection_count", "inference_ms", "fps"]:
+        for key in [
+            "frame_id",
+            "timestamp",
+            "active_tracks",
+            "track_ids",
+            "detection_count",
+            "inference_ms",
+            "fps",
+        ]:
             assert key in frame_entry, f"Missing key: {key}"
 
     def test_frame_entry_track_ids(self):
@@ -418,14 +438,16 @@ class TestGetSummary:
     def test_summary_is_json_serialisable(self):
         """get_summary() must be JSON-serialisable for Exporter use."""
         import json
+
         a = _make_analytics()
         _call_update(a, frame_id=0, tracks=[_make_track(1)])
-        json.dumps(a.get_summary())   # must not raise
+        json.dumps(a.get_summary())  # must not raise
 
 
 # ===========================================================================
 # reset()
 # ===========================================================================
+
 
 class TestReset:
     def test_reset_clears_unique_visitors(self):

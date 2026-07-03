@@ -59,7 +59,7 @@ class Detector:
                  Overrides config.device.preferred when provided.
     """
 
-    def __init__(self, config: "ConfigManager", device: str | None = None) -> None:
+    def __init__(self, config: ConfigManager, device: str | None = None) -> None:
         self.model_type: str = config.model.type
         self.confidence_threshold: float = config.model.confidence_threshold
         self.iou_threshold: float = config.model.iou_threshold
@@ -106,8 +106,8 @@ class Detector:
                 frame,
                 conf=self.confidence_threshold,
                 iou=self.iou_threshold,
-                classes=[PERSON_CLASS_ID],   # only request person class
-                verbose=False,               # suppress Ultralytics console output
+                classes=[PERSON_CLASS_ID],  # only request person class
+                verbose=False,  # suppress Ultralytics console output
                 device=self.device,
             )
         except Exception as exc:
@@ -260,7 +260,10 @@ class Detector:
             if x2 <= x1 or y2 <= y1:
                 log.debug(
                     "Skipping degenerate bbox [%.1f, %.1f, %.1f, %.1f]",
-                    x1, y1, x2, y2,
+                    x1,
+                    y1,
+                    x2,
+                    y2,
                 )
                 continue
 

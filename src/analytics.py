@@ -41,7 +41,6 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from loggers import get_logger
-from src.constants import EMA_ALPHA
 from src.data_models import FrameResult, Track
 
 if TYPE_CHECKING:
@@ -64,7 +63,7 @@ class Analytics:
         config: Loaded ConfigManager instance.
     """
 
-    def __init__(self, config: "ConfigManager") -> None:
+    def __init__(self, config: ConfigManager) -> None:
         self.ema_alpha: float = config.analytics.ema_alpha
 
         # Unique visitor tracking
@@ -136,7 +135,7 @@ class Analytics:
         result = FrameResult(
             frame_id=frame_id,
             timestamp=timestamp,
-            tracks=list(tracks),          # defensive copy
+            tracks=list(tracks),  # defensive copy
             detection_count=detection_count,
             inference_time_ms=inference_time_ms,
             fps=fps,
@@ -187,10 +186,10 @@ class Analytics:
         """
         last = self.frame_results[-1] if self.frame_results else None
         return {
-            "frame_id":        last.frame_id if last else 0,
+            "frame_id": last.frame_id if last else 0,
             "unique_visitors": self.unique_visitor_count,
-            "active_tracks":   last.active_track_count if last else 0,
-            "current_fps":     round(self._ema_fps, 1),
+            "active_tracks": last.active_track_count if last else 0,
+            "current_fps": round(self._ema_fps, 1),
             "avg_inference_ms": round(self.avg_inference_ms, 1),
         }
 
@@ -212,21 +211,21 @@ class Analytics:
         # already available without recomputing.
 
         return {
-            "total_frames":           n,
-            "unique_visitors":        self.unique_visitor_count,
+            "total_frames": n,
+            "unique_visitors": self.unique_visitor_count,
             "peak_concurrent_tracks": self.peak_concurrent_tracks,
-            "total_detections":       self.total_detection_count,
-            "avg_fps":                round(avg_fps, 2),
-            "avg_inference_ms":       round(self.avg_inference_ms, 2),
+            "total_detections": self.total_detection_count,
+            "avg_fps": round(avg_fps, 2),
+            "avg_inference_ms": round(self.avg_inference_ms, 2),
             "frames": [
                 {
-                    "frame_id":        r.frame_id,
-                    "timestamp":       round(r.timestamp, 4),
-                    "active_tracks":   r.active_track_count,
-                    "track_ids":       r.active_track_ids,
+                    "frame_id": r.frame_id,
+                    "timestamp": round(r.timestamp, 4),
+                    "active_tracks": r.active_track_count,
+                    "track_ids": r.active_track_ids,
                     "detection_count": r.detection_count,
-                    "inference_ms":    round(r.inference_time_ms, 2),
-                    "fps":             round(r.fps, 2),
+                    "inference_ms": round(r.inference_time_ms, 2),
+                    "fps": round(r.fps, 2),
                 }
                 for r in self.frame_results
             ],
@@ -278,10 +277,7 @@ class Analytics:
             # Seed the EMA with the first real measurement
             self._ema_fps = instant_fps
         else:
-            self._ema_fps = (
-                self.ema_alpha * instant_fps
-                + (1.0 - self.ema_alpha) * self._ema_fps
-            )
+            self._ema_fps = self.ema_alpha * instant_fps + (1.0 - self.ema_alpha) * self._ema_fps
 
         return self._ema_fps
 
