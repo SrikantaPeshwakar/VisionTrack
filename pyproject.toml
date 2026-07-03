@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "visiontrack"
+version = "1.0.0"
+description = "Real-Time Multi-Object Tracking & Crowd Analytics using YOLOv8 and BoT-SORT"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "VisionTrack" }]
+keywords = [
+    "computer-vision",
+    "object-tracking",
+    "yolo",
+    "botsort",
+    "crowd-analytics",
+    "multi-object-tracking",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
+
+dependencies = [
+    "ultralytics>=8.0.0",
+    "opencv-python>=4.8.0",
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.65.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+]
+
+[project.scripts]
+visiontrack = "src.cli:main"
+visiontrack-eval = "evaluate:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/visiontrack"
+Documentation = "https://github.com/yourusername/visiontrack/blob/main/README.md"
+Repository = "https://github.com/yourusername/visiontrack"
+Issues = "https://github.com/yourusername/visiontrack/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+# --- Black formatter ---
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311"]
+
+# --- Ruff linter ---
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]  # line length handled by black
+
+# --- Mypy type checker ---
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+# --- Pytest ---
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=src --cov-report=term-missing"

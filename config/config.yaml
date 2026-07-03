@@ -1,0 +1,152 @@
+# ==============================================================================
+# VisionTrack Configuration
+# ==============================================================================
+# All pipeline parameters are defined here — nothing is hardcoded.
+# CLI arguments override these values at runtime.
+# Environment variable VISIONTRACK_DEVICE overrides the device setting.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Model
+# ------------------------------------------------------------------------------
+model:
+  # YOLO variant to use for person detection.
+  # Supported: yolov8n, yolov8s, yolov8m, yolov8l, yolov8x
+  #            yolov9c, yolov9e
+  #            yolov10n, yolov10s, yolov10m, yolov10l, yolov10x
+  #            yolo11n, yolo11s, yolo11m, yolo11l, yolo11x
+  #
+  # Trade-off guide:
+  #   yolov8n  →  ~32 FPS  — fast, good for real-time on CPU/entry GPU
+  #   yolov8s  →  ~24 FPS  — balanced speed/accuracy
+  #   yolov8m  →  ~18 FPS  — recommended for GPU deployments
+  #   yolov8l  →  ~12 FPS  — high accuracy, needs a capable GPU
+  #   yolov8x  →   ~8 FPS  — maximum accuracy, research use
+  type: "yolov8n"
+
+  # Minimum detection confidence to keep a bounding box.
+  # Lower → more detections (but more false positives).
+  # Range: [0.0, 1.0]
+  confidence_threshold: 0.25
+
+  # Intersection-over-Union threshold for Non-Maximum Suppression.
+  # Lower → more aggressive duplicate removal.
+  # Range: [0.0, 1.0]
+  iou_threshold: 0.45
+
+  # Directory where model weight files (.pt) are cached.
+  # Ultralytics will auto-download weights here on first run.
+  weights_dir: "models"
+
+  # Number of warmup frames to run before measuring FPS.
+  # Ensures GPU/CPU is fully initialised before benchmarking starts.
+  warmup_frames: 3
+
+# ------------------------------------------------------------------------------
+# Device
+# ------------------------------------------------------------------------------
+device:
+  # Preferred compute device.
+  # Supported: "cuda" | "mps" | "cpu"
+  # DeviceManager falls back automatically: cuda → mps → cpu.
+  # Override at runtime with: --device cpu
+  # Override via environment: VISIONTRACK_DEVICE=cpu
+  preferred: "cuda"
+
+  # Explicit fallback if preferred device is unavailable.
+  fallback: "cpu"
+
+# ------------------------------------------------------------------------------
+# Tracker
+# ------------------------------------------------------------------------------
+tracker:
+  # Tracking algorithm config file (BoT-SORT).
+  # Must point to a valid Ultralytics tracker YAML.
+  config_file: "config/botsort.yaml"
+
+  # Persist track IDs across frames (required for identity continuity).
+  persist: true
+
+# ------------------------------------------------------------------------------
+# Video
+# ------------------------------------------------------------------------------
+video:
+  # FourCC codec string for the output video file.
+  # "mp4v" → .mp4  |  "XVID" → .avi  |  "avc1" → .mp4 (H.264, macOS)
+  output_codec: "mp4v"
+
+  # Number of frames to skip between processed frames.
+  # 0 → process every frame (highest quality, slowest).
+  # 1 → process every other frame (2× speed, slight quality loss).
+  # Use on CPU to hit acceptable FPS on long videos.
+  skip_frames: 0
+
+  # Maximum processing resolution (width, height).
+  # null → use the source video's native resolution.
+  # Example: [1280, 720] to cap at 720p regardless of source.
+  max_resolution: null
+
+# ------------------------------------------------------------------------------
+# Visualisation
+# ------------------------------------------------------------------------------
+visualization:
+  # Draw bounding boxes around each tracked person.
+  show_boxes: true
+
+  # Overlay track ID labels on each bounding box.
+  show_ids: true
+
+  # Render the unique visitor counter in the top-left corner.
+  show_unique_count: true
+
+  # Render FPS and inference time in the top-right corner.
+  show_fps: true
+
+  # Draw trajectory trails behind each track (last N bounding box centres).
+  # Set to 0 to disable trails.
+  trail_length: 30
+
+  # Bounding box border thickness in pixels.
+  bbox_thickness: 2
+
+  # Opacity of HUD background panels (0.0 = transparent, 1.0 = opaque).
+  hud_alpha: 0.6
+
+# ------------------------------------------------------------------------------
+# Export
+# ------------------------------------------------------------------------------
+export:
+  # Root directory for all pipeline output runs.
+  # Each run creates a timestamped sub-directory: outputs/run_YYYYMMDD_HHMMSS/
+  output_dir: "outputs"
+
+  # File formats to generate after processing.
+  save_video: true   # Annotated output video
+  save_json: true    # Full analytics log (frame-level + track-level)
+  save_csv: true     # Flat per-detection CSV for spreadsheet analysis
+
+# ------------------------------------------------------------------------------
+# Analytics
+# ------------------------------------------------------------------------------
+analytics:
+  # Smoothing factor for the exponential moving average FPS display.
+  # Range: (0.0, 1.0] — lower = smoother, higher = more reactive.
+  ema_alpha: 0.1
+
+# ------------------------------------------------------------------------------
+# Logging
+# ------------------------------------------------------------------------------
+logging:
+  # Log verbosity level.
+  # Supported: "DEBUG" | "INFO" | "WARNING" | "ERROR"
+  level: "INFO"
+
+  # Log message format (Python logging format string).
+  format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+
+  # Date/time format used in log messages.
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+  # Write logs to this file in addition to the console.
+  # Set to null to disable file logging.
+  log_file: "visiontrack.log"

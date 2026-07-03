@@ -1,0 +1,90 @@
+# ==============================================================================
+# VisionTrack .gitignore
+# ==============================================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Virtual environments ---
+venv/
+env/
+ENV/
+.venv/
+.env/
+venv.bak/
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# --- Project specific ---
+# Keep directory structure but ignore generated content
+outputs/*
+!outputs/.gitkeep
+
+# Model weights are large — auto-downloaded on first run
+models/*.pt
+models/*.onnx
+models/*.engine
+!models/.gitkeep
+
+# Sample videos are large — not tracked in git
+sample_videos/*.mp4
+sample_videos/*.avi
+sample_videos/*.mov
+sample_videos/*.mkv
+!sample_videos/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Evaluation reports
+evaluation_report*.json
+
+# --- Testing ---
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+*.coveragerc
+
+# --- Type checking ---
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# --- Ruff cache ---
+.ruff_cache/
+
+# --- Temporary files ---
+*.tmp
+*.bak
+*.orig
+~$*
