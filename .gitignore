@@ -64,6 +64,7 @@ sample_videos/*.mkv
 # Logs
 *.log
 logs/
+!logs/.gitkeep
 
 # Evaluation reports
 evaluation_report*.json
