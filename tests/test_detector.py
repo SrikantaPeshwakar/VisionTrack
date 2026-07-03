@@ -451,7 +451,7 @@ class TestModelLoading:
         assert "yolov8n.pt" in call_arg
 
     def test_loads_from_model_name_when_no_local_file(self, tmp_path):
-        """When weights file is absent, bare model name is passed to YOLO()."""
+        """When weights file is absent, full target path is passed to YOLO for download."""
         cfg = _make_config(weights_dir=str(tmp_path), warmup=0)
         yolo_instance = MagicMock()
         yolo_instance.return_value = _make_results([])
@@ -462,4 +462,7 @@ class TestModelLoading:
             Detector(cfg, device="cpu")
 
         call_arg = yolo_cls.call_args[0][0]
-        assert call_arg == "yolov8n"
+        # Must pass the full path into models/ — not a bare model name —
+        # so Ultralytics downloads directly to models/ rather than CWD.
+        assert "yolov8n.pt" in call_arg
+        assert str(tmp_path) in call_arg

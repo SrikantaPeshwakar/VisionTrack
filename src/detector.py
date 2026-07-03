@@ -135,6 +135,9 @@ class Detector:
         """Load YOLO weights, downloading them on first run if not cached."""
         from ultralytics import YOLO  # deferred import — keeps startup fast
 
+        # Ensure the weights directory exists before any download attempt
+        self._weights_dir.mkdir(parents=True, exist_ok=True)
+
         weights_path = self._weights_dir / f"{self.model_type}.pt"
 
         if weights_path.is_file():
@@ -143,14 +146,13 @@ class Detector:
         else:
             log.info(
                 "Weights not found at '%s'. "
-                "Ultralytics will download '%s' automatically.",
+                "Ultralytics will download '%s' to models/ automatically.",
                 weights_path,
                 self.model_type,
             )
-            # Ultralytics accepts the bare model name and downloads to its
-            # default cache directory (~/.ultralytics/).  We then move the
-            # file to our models/ directory for subsequent runs.
-            source = self.model_type
+            # Pass the full target path so Ultralytics downloads directly
+            # into models/ rather than the CWD (which is the project root).
+            source = str(weights_path)
 
         try:
             self._model = YOLO(source)
@@ -165,27 +167,6 @@ class Detector:
                 reason=str(exc),
                 details={"weights_path": str(weights_path), "device": self.device},
             ) from exc
-
-        # Cache weights to models/ dir for future runs
-        self._cache_weights(weights_path)
-
-    def _cache_weights(self, target_path: Path) -> None:
-        """Copy downloaded weights into models/ dir if not already there."""
-        if target_path.is_file():
-            return  # already cached
-        try:
-            import shutil
-            # Ultralytics stores weights in ~/.ultralytics/models/
-            ultralytics_cache = (
-                Path.home() / ".ultralytics" / "models" / f"{self.model_type}.pt"
-            )
-            if ultralytics_cache.is_file():
-                self._weights_dir.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(ultralytics_cache, target_path)
-                log.info("Cached model weights to '%s'.", target_path)
-        except Exception as exc:
-            # Non-fatal — model still works from Ultralytics' own cache
-            log.debug("Could not cache weights to models/ dir: %s", exc)
 
     # ------------------------------------------------------------------
     # Internal: warmup
