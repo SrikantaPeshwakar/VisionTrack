@@ -1,107 +1,92 @@
 # ==============================================================================
-# BoT-SORT Tracker Configuration
+# BoT-SORT Tracker Configuration for VisionTrack
 # ==============================================================================
-# BoT-SORT: Robust Associations Multi-Pedestrian Tracking
-# Paper: https://arxiv.org/abs/2206.14651
+# Field names must match Ultralytics' expected tracker config exactly.
+# Reference: ultralytics/cfg/trackers/botsort.yaml
 #
 # BoT-SORT combines:
 #   - Kalman filter for motion prediction
 #   - IoU-based association for positional matching
-#   - ReID appearance embeddings for identity re-association after occlusion
-#   - Camera motion compensation (CMC) via sparse optical flow
-#
-# This file is passed directly to Ultralytics' built-in tracker:
-#   model.track(source=..., tracker="config/botsort.yaml", persist=True)
+#   - Optional ReID appearance embeddings (disabled by default for speed)
+#   - Global motion compensation (GMC) via sparse optical flow
 # ==============================================================================
 
-tracker_type: botsort   # tracker type: {botsort, bytetrack}
+tracker_type: botsort   # tracker backend: {botsort, bytetrack}
 
 # ------------------------------------------------------------------------------
 # Detection Thresholds
 # ------------------------------------------------------------------------------
 
-# Minimum confidence for a detection to be considered a high-quality match
-# in the first association stage. Tracks are only initialised from detections
-# above this threshold.
+# Minimum confidence for first-stage (high-quality) matching.
+# Tracks are only initialised from detections above this threshold.
+# Lower to keep more detections; raise for cleaner tracks.
 # Range: [0.0, 1.0]
-track_high_thresh: 0.5
+track_high_thresh: 0.25
 
-# Minimum confidence for a detection to be used in the second (low-confidence)
-# association stage. Catches partially occluded or distant persons.
+# Minimum confidence for second-stage (low-score) recovery matching.
+# Catches partially occluded or distant persons.
 # Range: [0.0, track_high_thresh)
 track_low_thresh: 0.1
 
-# Minimum confidence required to initialise a brand-new track.
-# Prevents spurious tracks from noise or background detections.
+# Minimum confidence to start a brand-new track.
+# Higher reduces false/spurious tracks.
 # Range: [0.0, 1.0]
-new_track_thresh: 0.6
+new_track_thresh: 0.25
 
 # ------------------------------------------------------------------------------
 # Track Lifecycle
 # ------------------------------------------------------------------------------
 
-# Number of consecutive frames a track is allowed to go undetected (occluded)
-# before it is permanently deleted.
-# Higher → more tolerant of long occlusions but may retain ghost tracks.
-# Lower  → faster cleanup but more ID switches on brief occlusions.
-# Recommended range: 20–60 frames; set higher for dense/crowded scenes.
+# Frames to keep a lost track alive during occlusion before deletion.
+# Higher → handles longer occlusions but risks more ID switches.
+# Lower  → faster cleanup but more IDs lost on brief occlusions.
+# Recommended: 20–60 for dense crowd scenes.
 track_buffer: 30
 
 # ------------------------------------------------------------------------------
 # Association
 # ------------------------------------------------------------------------------
 
-# IoU threshold for the primary association between detections and active tracks.
-# Detections with IoU > this value are matched to existing tracks.
+# Similarity threshold for IoU/cost-based association.
+# Tune in tandem with detector confidence quality.
 # Range: [0.0, 1.0]
 match_thresh: 0.8
 
-# Minimum IoU overlap required when fusing detection and track bounding boxes
-# during the Kalman update step.
-# Range: [0.0, 1.0]
-fuse_score: 0.5    # detection score fusion with IOU (True/False)
+# Fuse detection score with motion/IoU for matching.
+# True stabilises tracks from weak detections.
+fuse_score: True
 
 # ------------------------------------------------------------------------------
-# Appearance (ReID) Embeddings
+# Global Motion Compensation (GMC)
 # ------------------------------------------------------------------------------
 
-# Enable ReID-based appearance matching. When True, BoT-SORT extracts
-# appearance feature vectors and uses cosine similarity alongside IoU for
-# re-associating tracks that reappear after occlusion.
-# Disable on CPU-only deployments for a significant speed boost.
-with_reid: true
+# Algorithm to compensate for camera motion between frames.
+# Options:
+#   sparseOptFlow  — sparse optical flow (fast, good for handheld cameras)
+#   orb            — ORB feature matching (slower, more accurate)
+#   sift           — SIFT feature matching (slowest, most robust)
+#   ecc            — enhanced correlation coefficient
+#   none           — disable GMC (use for fully static cameras)
+gmc_method: sparseOptFlow
 
-# Proximity threshold for ReID cosine similarity.
-# Tracks with similarity > this value are considered the same person.
+# ------------------------------------------------------------------------------
+# ReID (Appearance Embeddings)
+# ------------------------------------------------------------------------------
+
+# Enable ReID model for appearance-based re-identification.
+# Disabled by default — requires an additional embedding model download
+# and significant extra compute. Enable for scenes with many occlusions.
+with_reid: False
+
+# Minimum IoU proximity to consider tracks for ReID matching.
 # Range: [0.0, 1.0]
 proximity_thresh: 0.5
 
-# Appearance feature similarity threshold.
+# Minimum cosine similarity for appearance-based re-association.
+# Raise to avoid identity swaps; lower to recover more occluded tracks.
 # Range: [0.0, 1.0]
-appearance_thresh: 0.25
+appearance_thresh: 0.8
 
-# ReID model to use for appearance feature extraction.
-# Ultralytics uses its own lightweight embedding model by default.
-model_weights: auto
-
-# ------------------------------------------------------------------------------
-# Camera Motion Compensation (CMC)
-# ------------------------------------------------------------------------------
-
-# CMC algorithm to correct for camera movement between frames.
-# Options:
-#   "sparseOptFlow"  — sparse optical flow (fast, good for most videos)
-#   "sof"            — alias for sparseOptFlow
-#   "orb"            — ORB feature matching (slower, more accurate)
-#   "ecc"            — enhanced correlation coefficient (slowest, most robust)
-#   "none"           — disable CMC (use for static cameras)
-cmc_method: sparseOptFlow
-
-# ------------------------------------------------------------------------------
-# Frame Rate
-# ------------------------------------------------------------------------------
-
-# Expected frame rate of the input video.
-# Used by the Kalman filter's motion model for state prediction.
-# Set to match your source video FPS (null = auto-detect from video).
-frame_rate: 30
+# ReID model name or path.
+# "auto" uses detector features when available (no extra download needed).
+model: auto

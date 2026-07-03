@@ -237,7 +237,9 @@ class Tracker:
 
         for i, row in enumerate(boxes_data):
             x1, y1, x2, y2 = float(row[0]), float(row[1]), float(row[2]), float(row[3])
-            conf     = float(row[4])
+            # Clamp to [0, 1] — BoT-SORT with fuse_score=True can produce
+            # values slightly above 1.0 (conf × IoU fusion).
+            conf     = min(1.0, max(0.0, float(row[4])))
             class_id = int(row[5])
             track_id = int(track_ids[i])
 

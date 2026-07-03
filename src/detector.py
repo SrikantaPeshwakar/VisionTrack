@@ -260,7 +260,8 @@ class Detector:
                 float(row[1]),
                 float(row[2]),
                 float(row[3]),
-                float(row[4]),
+                # Clamp to [0, 1] — fused scores can slightly exceed 1.0
+                min(1.0, max(0.0, float(row[4]))),
                 int(row[5]),
             )
 

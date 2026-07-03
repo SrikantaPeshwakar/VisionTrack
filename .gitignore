@@ -49,6 +49,13 @@ outputs/*
 !outputs/.gitkeep
 
 # Model weights are large — auto-downloaded on first run
+# Ignored wherever they land (root or models/)
+*.pt
+*.onnx
+*.engine
+*.torchscript
+*.tflite
+*.pb
 models/*.pt
 models/*.onnx
 models/*.engine
@@ -89,3 +96,4 @@ dmypy.json
 *.bak
 *.orig
 ~$*
+/results
